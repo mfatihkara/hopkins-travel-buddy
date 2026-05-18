@@ -269,11 +269,12 @@ export default async function Home({
                     }
                     rightSlot={
                       sharedGroup ? (
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/groups/${t.group_id}`}>
-                            View <ArrowRight className="h-3.5 w-3.5" />
-                          </Link>
-                        </Button>
+                        <Link
+                          href={`/groups/${t.group_id}`}
+                          className={buttonVariants({ variant: "outline", size: "sm" })}
+                        >
+                          View <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
                       ) : (
                         <form action={joinTrip}>
                           <input type="hidden" name="trip_id" value={t.id} />
