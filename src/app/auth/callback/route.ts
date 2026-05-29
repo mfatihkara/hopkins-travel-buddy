@@ -37,5 +37,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // If the user hasn't set their name yet, send them to the setup page first.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", data.user.id)
+    .single();
+
+  if (!profile?.full_name) {
+    const destination = next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
+    return NextResponse.redirect(`${origin}/profile/setup${destination}`);
+  }
+
   return NextResponse.redirect(`${origin}${next}`);
 }
