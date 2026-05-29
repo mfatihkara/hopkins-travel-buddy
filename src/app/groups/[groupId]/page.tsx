@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, Plane, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, Plane, MapPin, Clock, LogOut } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Chat from "./Chat";
+import { leaveGroup } from "./actions";
 
 const TZ = "America/New_York";
 
@@ -62,7 +64,7 @@ export default async function GroupPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: group }, { data: tripsData }, { data: messagesData }] =
+  const [{ data: group }, { data: tripsData }, { data: messagesData }, { count: messageCount }] =
     await Promise.all([
       supabase
         .from("trip_groups")
@@ -80,14 +82,18 @@ export default async function GroupPage({
         .from("messages")
         .select("id, group_id, user_id, body, created_at")
         .eq("group_id", groupId)
-        .order("created_at", { ascending: true })
-        .limit(100),
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("group_id", groupId),
     ]);
 
   if (!group) notFound();
 
   const trips = (tripsData ?? []) as unknown as Trip[];
-  const initialMessages = (messagesData ?? []) as Message[];
+  const initialMessages = ((messagesData ?? []) as Message[]).reverse(); // newest-last for display
 
   const iAmMember = trips.some((t) => t.user_id === user.id);
   if (!iAmMember) {
@@ -118,7 +124,7 @@ export default async function GroupPage({
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-1 items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Plane className="h-4 w-4" />
             </div>
@@ -132,6 +138,18 @@ export default async function GroupPage({
               </p>
             </div>
           </div>
+          <form action={leaveGroup}>
+            <input type="hidden" name="group_id" value={groupId} />
+            <Button
+              type="submit"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-destructive gap-1.5"
+            >
+              <LogOut className="h-4 w-4" />
+              Leave
+            </Button>
+          </form>
         </div>
       </header>
 
@@ -195,6 +213,7 @@ export default async function GroupPage({
             currentUserId={user.id}
             initialMessages={initialMessages}
             members={members}
+            totalMessages={messageCount ?? 0}
           />
         </section>
       </div>

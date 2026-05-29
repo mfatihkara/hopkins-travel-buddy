@@ -9,6 +9,30 @@ function home(error: string): never {
   redirect("/?error=" + encodeURIComponent(error));
 }
 
+export async function deleteTrip(formData: FormData) {
+  const tripId = String(formData.get("trip_id") ?? "");
+  if (!tripId) home("Missing trip.");
+
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase
+    .from("trips")
+    .delete()
+    .eq("id", tripId)
+    .eq("user_id", user.id); // RLS also enforces this, belt-and-suspenders
+
+  if (error) home(error.message);
+
+  revalidatePath("/");
+  redirect("/");
+}
+
 export async function joinTrip(formData: FormData) {
   const otherTripId = String(formData.get("trip_id") ?? "");
   if (!otherTripId) home("Missing trip.");

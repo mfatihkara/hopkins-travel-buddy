@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { Plane, MapPin, Plus, ArrowRight, LogOut, Search } from "lucide-react";
+import { Plane, MapPin, Plus, ArrowRight, LogOut, Search, Trash2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
-import { joinTrip } from "./trips/actions";
+import { joinTrip, deleteTrip } from "./trips/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -217,17 +217,31 @@ export default async function Home({
                     )
                   }
                   rightSlot={
-                    t.group_id ? (
-                      <Link
-                        href={`/groups/${t.group_id}`}
-                        className={buttonVariants({
-                          variant: "outline",
-                          size: "sm",
-                        })}
-                      >
-                        View <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    ) : null
+                    <div className="flex items-center gap-2">
+                      {t.group_id && (
+                        <Link
+                          href={`/groups/${t.group_id}`}
+                          className={buttonVariants({
+                            variant: "outline",
+                            size: "sm",
+                          })}
+                        >
+                          View <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      )}
+                      <form action={deleteTrip}>
+                        <input type="hidden" name="trip_id" value={t.id} />
+                        <Button
+                          type="submit"
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label="Delete trip"
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </form>
+                    </div>
                   }
                 />
               ))}

@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { Send, ChevronUp } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 50;
 
 type Message = {
   id: string;
@@ -36,18 +39,24 @@ export default function Chat({
   currentUserId,
   initialMessages,
   members,
+  totalMessages,
 }: {
   groupId: string;
   currentUserId: string;
   initialMessages: Message[];
   members: Member[];
+  totalMessages: number;
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const memberByUserId = new Map(members.map((m) => [m.user_id, m]));
+
+  // Whether there are older messages not yet loaded
+  const hasMore = messages.length < totalMessages;
 
   useEffect(() => {
     const supabase = createClient();
@@ -76,12 +85,66 @@ export default function Chat({
     };
   }, [groupId]);
 
+  // Scroll to bottom only on new messages (not when loading older ones)
+  const prevLengthRef = useRef(initialMessages.length);
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages.length]);
+    const prev = prevLengthRef.current;
+    prevLengthRef.current = messages.length;
+    // Only scroll if messages were appended at the end (new message), not prepended
+    if (messages.length > prev) {
+      const lastNew = messages[messages.length - 1];
+      const lastOld = messages[prev - 1];
+      if (!lastOld || lastNew.created_at >= lastOld.created_at) {
+        scrollRef.current?.scrollTo({
+          top: scrollRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [messages]);
+
+  // Scroll to bottom on first render
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
+
+  async function loadMore() {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+
+    const supabase = createClient();
+    const oldest = messages[0];
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, group_id, user_id, body, created_at")
+      .eq("group_id", groupId)
+      .lt("created_at", oldest.created_at)
+      .order("created_at", { ascending: false })
+      .limit(PAGE_SIZE);
+
+    setLoadingMore(false);
+
+    if (error) {
+      toast.error("Couldn't load older messages.");
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const older = (data as Message[]).reverse();
+      // Preserve scroll position — measure before prepend, restore after
+      const el = scrollRef.current;
+      const prevScrollHeight = el?.scrollHeight ?? 0;
+      setMessages((prev) => {
+        const ids = new Set(prev.map((m) => m.id));
+        return [...older.filter((m) => !ids.has(m.id)), ...prev];
+      });
+      requestAnimationFrame(() => {
+        if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
+      });
+    }
+  }
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -100,7 +163,7 @@ export default function Chat({
     setSending(false);
     if (error) {
       setInput(body);
-      alert(error.message);
+      toast.error("Failed to send message. Try again.");
       return;
     }
     if (data) {
@@ -117,6 +180,22 @@ export default function Chat({
         ref={scrollRef}
         className="h-[28rem] overflow-y-auto bg-muted/30 px-3 py-4"
       >
+        {/* Load earlier button */}
+        {hasMore && (
+          <div className="flex justify-center mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="text-xs text-muted-foreground gap-1"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+              {loadingMore ? "Loading…" : "Load earlier messages"}
+            </Button>
+          </div>
+        )}
+
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-muted-foreground text-center px-6">
