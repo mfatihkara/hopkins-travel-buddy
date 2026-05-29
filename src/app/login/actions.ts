@@ -4,16 +4,19 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
-const ALLOWED_DOMAINS = ["jhu.edu", "jh.edu"];
+function isEduEmail(email: string): boolean {
+  const domain = email.split("@")[1] ?? "";
+  // Accept any .edu domain
+  return domain.endsWith(".edu");
+}
 
 export async function signInWithEmail(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const domain = email.split("@")[1];
 
-  if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
+  if (!isEduEmail(email)) {
     redirect(
       "/login?error=" +
-        encodeURIComponent("Only @jhu.edu and @jh.edu emails are allowed."),
+        encodeURIComponent("Only .edu email addresses are allowed."),
     );
   }
 

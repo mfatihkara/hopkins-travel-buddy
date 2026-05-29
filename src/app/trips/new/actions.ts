@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
-const AIRPORTS = ["BWI", "IAD", "DCA"] as const;
-type Airport = (typeof AIRPORTS)[number];
+// Well-known airport codes — open-ended so any school can use their local airports
+const AIRPORT_RE = /^[A-Z]{3}$/;
 
 function back(error: string): never {
   redirect("/trips/new?error=" + encodeURIComponent(error));
@@ -28,13 +28,13 @@ function parseTimeFields(prefix: string, formData: FormData): string | null {
 }
 
 export async function postTrip(formData: FormData) {
-  const airport = String(formData.get("airport") ?? "");
+  const airport = String(formData.get("airport") ?? "").trim().toUpperCase();
   const date = String(formData.get("date") ?? "");
   const startHHMM = parseTimeFields("time_earliest", formData);
   const endHHMM = parseTimeFields("time_latest", formData);
   const pickupArea = String(formData.get("pickup_area") ?? "").trim();
 
-  if (!AIRPORTS.includes(airport as Airport)) back("Pick an airport.");
+  if (!AIRPORT_RE.test(airport)) back("Enter a valid 3-letter airport code.");
   if (!date) back("Pick a date.");
   if (!startHHMM || !endHHMM) back("Pick a valid time window.");
   if (!pickupArea) back("Pickup area is required.");
@@ -61,9 +61,12 @@ export async function postTrip(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const school = user.email?.split("@")[1] ?? "";
+
   const { error } = await supabase.from("trips").insert({
     user_id: user.id,
     airport,
+    school,
     depart_window_start: start.toISOString(),
     depart_window_end: end.toISOString(),
     pickup_area: pickupArea,

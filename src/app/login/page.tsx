@@ -30,7 +30,7 @@ export default async function LoginPage({
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Sign in</h1>
           <p className="text-sm text-muted-foreground">
-            Use your @jhu.edu or @jh.edu email.
+            Use your .edu email.
             <br />
             We&apos;ll send you a magic link.
           </p>
@@ -47,7 +47,7 @@ export default async function LoginPage({
                   name="email"
                   required
                   autoComplete="email"
-                  placeholder="you@jhu.edu"
+                  placeholder="you@school.edu"
                   className="h-11"
                 />
               </div>

@@ -2,7 +2,10 @@ import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-const ALLOWED_DOMAINS = ["jhu.edu", "jh.edu"];
+function isEduEmail(email: string): boolean {
+  const domain = email.split("@")[1] ?? "";
+  return domain.endsWith(".edu");
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -27,12 +30,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const domain = data.user.email?.split("@")[1];
-  if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
+  if (!isEduEmail(data.user.email ?? "")) {
     await supabase.auth.signOut();
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(
-        "Only @jhu.edu and @jh.edu emails are allowed.",
+        "Only .edu email addresses are allowed.",
       )}`,
     );
   }

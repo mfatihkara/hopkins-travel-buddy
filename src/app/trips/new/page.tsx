@@ -104,19 +104,21 @@ export default async function NewTripPage({
                 <Plane className="h-4 w-4 text-muted-foreground" />
                 Airport
               </Label>
-              <select
+              <Input
+                type="text"
                 name="airport"
                 required
-                defaultValue=""
-                className={selectClass}
-              >
-                <option value="" disabled>
-                  Select airport
-                </option>
-                <option value="BWI">BWI — Baltimore</option>
-                <option value="IAD">IAD — Dulles</option>
-                <option value="DCA">DCA — Reagan</option>
-              </select>
+                maxLength={3}
+                minLength={3}
+                pattern="[A-Za-z]{3}"
+                placeholder="BWI, JFK, LAX…"
+                autoCapitalize="characters"
+                autoComplete="off"
+                className="h-11 uppercase tracking-wider"
+              />
+              <p className="text-xs text-muted-foreground">
+                3-letter airport code (IATA)
+              </p>
             </div>
 
             <div className="space-y-1.5">

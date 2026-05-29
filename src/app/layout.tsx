@@ -7,8 +7,8 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Hopkins Travel Buddy",
-  description: "Find a JHU classmate to share a ride to BWI, IAD, or DCA.",
+  title: "Travel Buddy",
+  description: "Find a classmate at your school to share a ride to the airport.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

@@ -1,7 +1,7 @@
 {
-  "name": "Hopkins Travel Buddy",
+  "name": "Travel Buddy",
   "short_name": "Travel Buddy",
-  "description": "Find a JHU classmate to share a ride to BWI, IAD, or DCA.",
+  "description": "Find a classmate at your school to share a ride to the airport.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

@@ -109,28 +109,32 @@ export default async function Home({
           </div>
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">
-              Hopkins Travel Buddy
+              Travel Buddy
             </h1>
             <p className="text-muted-foreground">
-              Find a JHU classmate to share a ride to BWI, IAD, or DCA.
+              Find a classmate at your school to share a ride to the airport.
             </p>
           </div>
           <Link
             href="/login"
             className={buttonVariants({ size: "xl", className: "w-full" })}
           >
-            Sign in with @jhu.edu
+            Sign in with your .edu email
           </Link>
         </div>
       </main>
     );
   }
 
+  // Filter feed to the current user's school so students only see their own.
+  const userSchool = user.email?.split("@")[1] ?? "";
+
   const { data } = await supabase
     .from("trips")
     .select(
       "id, airport, depart_window_start, depart_window_end, pickup_area, status, group_id, user_id, profiles ( email, full_name )",
     )
+    .eq("school", userSchool)
     .neq("status", "closed")
     .gte("depart_window_start", new Date().toISOString())
     .order("depart_window_start", { ascending: true })
