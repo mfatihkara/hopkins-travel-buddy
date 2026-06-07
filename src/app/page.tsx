@@ -6,6 +6,7 @@ import { joinTrip, deleteTrip } from "./trips/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const TZ = "America/New_York";
 
@@ -36,12 +37,19 @@ type TripRow = {
   status: string;
   group_id: string | null;
   user_id: string;
-  profiles: { email: string; full_name: string | null } | null;
+  profiles: { email: string; full_name: string | null; avatar_url: string | null } | null;
 };
 
 function displayName(profile: TripRow["profiles"]) {
   if (!profile) return "Anonymous";
   return profile.full_name ?? profile.email.split("@")[0];
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function TripCard({
@@ -57,9 +65,18 @@ function TripCard({
     <Card className="py-0">
       <CardContent className="px-4 py-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Plane className="h-5 w-5" />
-          </div>
+          <Avatar size="lg" className="shrink-0">
+            {trip.profiles?.avatar_url && (
+              <AvatarImage src={trip.profiles.avatar_url} alt={displayName(trip.profiles)} />
+            )}
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {trip.profiles ? (
+                initials(displayName(trip.profiles))
+              ) : (
+                <Plane className="h-5 w-5" />
+              )}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between gap-2">
               <p className="font-semibold leading-tight">
@@ -129,10 +146,16 @@ export default async function Home({
   // Filter feed to the current user's school so students only see their own.
   const userSchool = user.email?.split("@")[1] ?? "";
 
+  const { data: myProfile } = await supabase
+    .from("profiles")
+    .select("full_name, avatar_url")
+    .eq("id", user.id)
+    .single();
+
   const { data } = await supabase
     .from("trips")
     .select(
-      "id, airport, depart_window_start, depart_window_end, pickup_area, status, group_id, user_id, profiles ( email, full_name )",
+      "id, airport, depart_window_start, depart_window_end, pickup_area, status, group_id, user_id, profiles ( email, full_name, avatar_url )",
     )
     .eq("school", userSchool)
     .neq("status", "closed")
@@ -157,16 +180,28 @@ export default async function Home({
             </div>
             <span className="font-semibold">Travel Buddy</span>
           </div>
-          <form action="/auth/sign-out" method="post">
-            <Button
-              type="submit"
-              variant="ghost"
-              size="icon"
-              aria-label="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </form>
+          <div className="flex items-center gap-1">
+            <Link href="/profile/edit" aria-label="Edit profile">
+              <Avatar size="sm">
+                {myProfile?.avatar_url && (
+                  <AvatarImage src={myProfile.avatar_url} alt={myProfile.full_name ?? "You"} />
+                )}
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {initials(myProfile?.full_name ?? user.email?.split("@")[0] ?? "?")}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+            <form action="/auth/sign-out" method="post">
+              <Button
+                type="submit"
+                variant="ghost"
+                size="icon"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
         </div>
       </header>
 

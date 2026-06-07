@@ -5,6 +5,7 @@ import { ArrowLeft, Plane, MapPin, Clock, LogOut } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Chat from "./Chat";
 import { leaveGroup } from "./actions";
 
@@ -39,7 +40,7 @@ type Trip = {
   pickup_area: string;
   depart_window_start: string;
   depart_window_end: string;
-  profiles: { email: string; full_name: string | null } | null;
+  profiles: { email: string; full_name: string | null; avatar_url: string | null } | null;
 };
 
 type Message = {
@@ -74,7 +75,7 @@ export default async function GroupPage({
       supabase
         .from("trips")
         .select(
-          "id, user_id, pickup_area, depart_window_start, depart_window_end, profiles ( email, full_name )",
+          "id, user_id, pickup_area, depart_window_start, depart_window_end, profiles ( email, full_name, avatar_url )",
         )
         .eq("group_id", groupId)
         .order("depart_window_start", { ascending: true }),
@@ -109,6 +110,7 @@ export default async function GroupPage({
         user_id: t.user_id,
         full_name: t.profiles?.full_name ?? null,
         email: t.profiles?.email ?? "",
+        avatar_url: t.profiles?.avatar_url ?? null,
       },
     ];
   });
@@ -172,9 +174,14 @@ export default async function GroupPage({
                       key={t.id}
                       className="flex items-center gap-3 px-4 py-3"
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                        {initials(name)}
-                      </div>
+                      <Avatar size="lg" className="shrink-0">
+                        {t.profiles?.avatar_url && (
+                          <AvatarImage src={t.profiles.avatar_url} alt={name} />
+                        )}
+                        <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                          {initials(name)}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium leading-tight truncate">
                           {name}
