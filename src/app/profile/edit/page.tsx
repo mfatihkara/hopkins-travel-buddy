@@ -10,6 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { updateProfile } from "./actions";
 
+// Avatar uploads relay through this server before reaching Supabase Storage,
+// which can take longer than the platform's default function timeout on slow
+// mobile connections. Give Server Actions on this page more room to finish.
+export const maxDuration = 60;
+
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";

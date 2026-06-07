@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
@@ -40,10 +40,17 @@ export async function updateProfile(formData: FormData) {
     const ext = avatar.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${user.id}/avatar.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, avatar, { upsert: true, contentType: avatar.type });
-    if (uploadError) back(uploadError.message);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, avatar, { upsert: true, contentType: avatar.type });
+      if (uploadError) back(uploadError.message);
+    } catch (e) {
+      // Let redirect()'s internal control-flow signal pass through untouched;
+      // only genuine network/runtime failures should fall through to back().
+      unstable_rethrow(e);
+      back("Couldn't upload your photo. Check your connection and try again.");
+    }
 
     const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
     // Cache-bust so the new image shows immediately even though the path is reused.
