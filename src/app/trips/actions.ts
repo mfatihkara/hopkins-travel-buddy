@@ -47,18 +47,44 @@ export async function joinTrip(formData: FormData) {
   if (error) {
     const msg = error.message;
     if (msg.includes("Not authenticated")) redirect("/login");
-    if (msg.includes("No compatible")) {
-      redirect(
-        "/trips/new?error=" +
-          encodeURIComponent(
-            "Post a trip with the same airport and an overlapping time window first.",
-          ),
-      );
-    }
+    if (msg.includes("No compatible")) redirect(`/trips/join/${otherTripId}`);
     if (msg.includes("Cannot join your own")) home("You can't join your own trip.");
     if (msg.includes("Trip is closed")) home("That trip is closed.");
     if (msg.includes("Trip not found")) home("That trip no longer exists.");
     home(msg);
+  }
+
+  revalidatePath("/");
+  redirect(`/groups/${groupId}`);
+}
+
+function joinPage(tripId: string, error: string): never {
+  redirect(`/trips/join/${tripId}?error=${encodeURIComponent(error)}`);
+}
+
+export async function joinTripCreatingMine(formData: FormData) {
+  const otherTripId = String(formData.get("trip_id") ?? "");
+  const pickupArea = String(formData.get("pickup_area") ?? "").trim();
+  if (!otherTripId) home("Missing trip.");
+  if (!pickupArea) joinPage(otherTripId, "Pickup area is required.");
+  if (pickupArea.length > 100) joinPage(otherTripId, "Pickup area is too long (max 100).");
+
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: groupId, error } = await supabase.rpc("create_trip_and_join", {
+    other_trip_id: otherTripId,
+    pickup_area: pickupArea,
+  });
+
+  if (error) {
+    const msg = error.message;
+    if (msg.includes("Not authenticated")) redirect("/login");
+    if (msg.includes("Cannot join your own")) home("You can't join your own trip.");
+    if (msg.includes("Trip is closed")) home("That trip is closed.");
+    if (msg.includes("Trip not found")) home("That trip no longer exists.");
+    if (msg.includes("Different school")) home("That trip is from a different school.");
+    joinPage(otherTripId, msg);
   }
 
   revalidatePath("/");
