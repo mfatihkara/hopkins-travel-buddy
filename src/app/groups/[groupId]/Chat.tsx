@@ -22,6 +22,7 @@ type Member = {
   user_id: string;
   full_name: string | null;
   email: string;
+  avatar_url: string | null;
 };
 
 const TZ = "America/New_York";
