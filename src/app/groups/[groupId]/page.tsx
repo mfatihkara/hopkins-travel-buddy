@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, Plane, MapPin, Clock, LogOut } from "lucide-react";
+import { ArrowLeft, Plane, MapPin, Clock, LogOut, Flag } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Chat from "./Chat";
 import { leaveGroup } from "./actions";
@@ -203,6 +203,23 @@ export default async function GroupPage({
                           {t.pickup_area}
                         </p>
                       </div>
+                      {!isMe && (
+                        <Link
+                          href={`/report/${t.user_id}?from=${encodeURIComponent(
+                            `/groups/${groupId}`,
+                          )}`}
+                          aria-label={`Report or block ${name}`}
+                          title="Report or block"
+                          className={buttonVariants({
+                            variant: "ghost",
+                            size: "icon-sm",
+                            className:
+                              "shrink-0 text-muted-foreground hover:text-destructive",
+                          })}
+                        >
+                          <Flag className="h-4 w-4" />
+                        </Link>
+                      )}
                     </li>
                   );
                 })}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { Plane, MapPin, Plus, ArrowRight, LogOut, Search, Trash2 } from "lucide-react";
+import { Plane, MapPin, Plus, ArrowRight, LogOut, Search, Trash2, Flag } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { joinTrip, deleteTrip } from "./trips/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -152,14 +152,25 @@ export default async function Home({
     .eq("id", user.id)
     .single();
 
-  const { data } = await supabase
+  // User ids in a block relationship with me (either direction) — their trips
+  // are hidden from my feed and mine from theirs.
+  const { data: blockedRows } = await supabase.rpc("blocked_with_me");
+  const blockedIds = ((blockedRows as string[] | null) ?? []).filter(Boolean);
+
+  let query = supabase
     .from("trips")
     .select(
       "id, airport, depart_window_start, depart_window_end, pickup_area, status, group_id, user_id, profiles ( email, full_name, avatar_url )",
     )
     .eq("school", userSchool)
     .neq("status", "closed")
-    .gte("depart_window_start", new Date().toISOString())
+    .gte("depart_window_start", new Date().toISOString());
+
+  if (blockedIds.length > 0) {
+    query = query.not("user_id", "in", `(${blockedIds.join(",")})`);
+  }
+
+  const { data } = await query
     .order("depart_window_start", { ascending: true })
     .limit(100);
 
@@ -321,21 +332,36 @@ export default async function Home({
                       ) : null
                     }
                     rightSlot={
-                      sharedGroup ? (
+                      <div className="flex items-center gap-1.5">
+                        {sharedGroup ? (
+                          <Link
+                            href={`/groups/${t.group_id}`}
+                            className={buttonVariants({ variant: "outline", size: "sm" })}
+                          >
+                            View <ArrowRight className="h-3.5 w-3.5" />
+                          </Link>
+                        ) : (
+                          <form action={joinTrip}>
+                            <input type="hidden" name="trip_id" value={t.id} />
+                            <Button type="submit" size="sm">
+                              Join
+                            </Button>
+                          </form>
+                        )}
                         <Link
-                          href={`/groups/${t.group_id}`}
-                          className={buttonVariants({ variant: "outline", size: "sm" })}
+                          href={`/report/${t.user_id}?from=${encodeURIComponent("/")}`}
+                          aria-label="Report or block"
+                          title="Report or block"
+                          className={buttonVariants({
+                            variant: "ghost",
+                            size: "icon-sm",
+                            className:
+                              "text-muted-foreground hover:text-destructive",
+                          })}
                         >
-                          View <ArrowRight className="h-3.5 w-3.5" />
+                          <Flag className="h-4 w-4" />
                         </Link>
-                      ) : (
-                        <form action={joinTrip}>
-                          <input type="hidden" name="trip_id" value={t.id} />
-                          <Button type="submit" size="sm">
-                            Join
-                          </Button>
-                        </form>
-                      )
+                      </div>
                     }
                   />
                 );
