@@ -136,6 +136,25 @@ function TripCard({
   );
 }
 
+function EmptyState({
+  icon: Icon,
+  children,
+}: {
+  icon: typeof Plane;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="py-0">
+      <CardContent className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Icon className="h-6 w-6" />
+        </div>
+        <div className="text-sm text-muted-foreground">{children}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
 const STEPS = [
   {
     icon: Plane,
@@ -405,6 +424,13 @@ export default async function Home({
       </header>
 
       <div className="mx-auto max-w-md px-4 py-6 space-y-8">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">Your rides</h1>
+          <p className="text-sm text-muted-foreground">
+            Find a classmate headed to the airport.
+          </p>
+        </div>
+
         {params.message && (
           <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
             {params.message}
@@ -421,18 +447,16 @@ export default async function Home({
             Your trips
           </h2>
           {myTrips.length === 0 ? (
-            <Card className="py-0">
-              <CardContent className="px-4 py-8 text-center text-sm text-muted-foreground">
-                You haven&apos;t posted any trips yet.
-                <br />
-                Tap{" "}
-                <span className="inline-flex items-center gap-1 font-medium text-primary">
-                  <Plus className="h-3.5 w-3.5" />
-                  Post a trip
-                </span>{" "}
-                to find a buddy.
-              </CardContent>
-            </Card>
+            <EmptyState icon={Plane}>
+              You haven&apos;t posted any trips yet.
+              <br />
+              Tap{" "}
+              <span className="inline-flex items-center gap-1 font-medium text-primary">
+                <Plus className="h-3.5 w-3.5" />
+                Post a trip
+              </span>{" "}
+              to find a buddy.
+            </EmptyState>
           ) : (
             <div className="space-y-3">
               {myTrips.map((t) => (
@@ -497,13 +521,11 @@ export default async function Home({
             minDate={todayEt}
           />
           {otherTrips.length === 0 ? (
-            <Card className="py-0">
-              <CardContent className="px-4 py-8 text-center text-sm text-muted-foreground">
-                {filtersActive
-                  ? "No trips match your filters. Try clearing them."
-                  : "No other trips right now. Tell a friend!"}
-              </CardContent>
-            </Card>
+            <EmptyState icon={filtersActive ? Search : Users}>
+              {filtersActive
+                ? "No trips match your filters. Try clearing them."
+                : "No other trips right now. Tell a friend!"}
+            </EmptyState>
           ) : (
             <div className="space-y-3">
               {otherTrips.map((t) => {

@@ -37,7 +37,7 @@ export default async function LoginPage({
         </Link>
 
         <div className="text-center space-y-3">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[#3f6fb0] text-primary-foreground shadow-sm">
             <Plane className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">
