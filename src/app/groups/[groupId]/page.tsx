@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, Plane, MapPin, Clock, LogOut, Flag } from "lucide-react";
+import { ArrowLeft, Plane, MapPin, Clock, LogOut, Flag, Star } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Chat from "./Chat";
+import RatingStars from "./RatingStars";
 import { leaveGroup } from "./actions";
 
 const TZ = "America/New_York";
@@ -53,10 +54,13 @@ type Message = {
 
 export default async function GroupPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ groupId: string }>;
+  searchParams: Promise<{ error?: string; message?: string }>;
 }) {
   const { groupId } = await params;
+  const { error: errorMsg, message } = await searchParams;
 
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
@@ -115,6 +119,38 @@ export default async function GroupPage({
     ];
   });
 
+  // The ride is "done" (and thus rateable) once my own window has passed.
+  const myTrip = trips.find((t) => t.user_id === user.id);
+  const rideCompleted =
+    !!myTrip && new Date(myTrip.depart_window_end) < new Date();
+
+  // My existing ratings for this group + everyone's public rating summary.
+  const memberIds = members.map((m) => m.user_id);
+  const [{ data: myRatingsData }, { data: summaryData }] = await Promise.all([
+    supabase
+      .from("ratings")
+      .select("ratee_id, score")
+      .eq("rater_id", user.id)
+      .eq("group_id", groupId),
+    supabase
+      .from("profile_ratings")
+      .select("user_id, avg_score, rating_count")
+      .in("user_id", memberIds),
+  ]);
+
+  const myRatings = new Map<string, number>(
+    (myRatingsData ?? []).map((r) => [r.ratee_id as string, r.score as number]),
+  );
+  const summaries = new Map<
+    string,
+    { avg: number; count: number }
+  >(
+    (summaryData ?? []).map((s) => [
+      s.user_id as string,
+      { avg: Number(s.avg_score), count: s.rating_count as number },
+    ]),
+  );
+
   return (
     <main className="min-h-dvh">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
@@ -156,6 +192,17 @@ export default async function GroupPage({
       </header>
 
       <div className="mx-auto max-w-md px-4 py-6 space-y-6">
+        {message && (
+          <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
+            {message}
+          </div>
+        )}
+        {errorMsg && (
+          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 ring-1 ring-red-200">
+            {errorMsg}
+          </div>
+        )}
+
         <section className="space-y-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Members
@@ -169,56 +216,78 @@ export default async function GroupPage({
                     t.profiles?.email.split("@")[0] ??
                     "Member";
                   const isMe = t.user_id === user.id;
+                  const summary = summaries.get(t.user_id);
+                  const myScore = myRatings.get(t.user_id) ?? 0;
                   return (
-                    <li
-                      key={t.id}
-                      className="flex items-center gap-3 px-4 py-3"
-                    >
-                      <Avatar size="lg" className="shrink-0">
-                        {t.profiles?.avatar_url && (
-                          <AvatarImage src={t.profiles.avatar_url} alt={name} />
+                    <li key={t.id} className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar size="lg" className="shrink-0">
+                          {t.profiles?.avatar_url && (
+                            <AvatarImage src={t.profiles.avatar_url} alt={name} />
+                          )}
+                          <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                            {initials(name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium leading-tight truncate">
+                            {name}
+                            {isMe && (
+                              <span className="ml-1 text-muted-foreground font-normal">
+                                (you)
+                              </span>
+                            )}
+                            {summary && (
+                              <span className="ml-2 inline-flex items-center gap-0.5 align-middle text-xs font-normal text-muted-foreground">
+                                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                {summary.avg.toFixed(1)}
+                                <span className="text-muted-foreground/70">
+                                  ({summary.count})
+                                </span>
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                            <Clock className="h-3 w-3 shrink-0" />
+                            {formatWindow(
+                              t.depart_window_start,
+                              t.depart_window_end,
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            {t.pickup_area}
+                          </p>
+                        </div>
+                        {!isMe && (
+                          <Link
+                            href={`/report/${t.user_id}?from=${encodeURIComponent(
+                              `/groups/${groupId}`,
+                            )}`}
+                            aria-label={`Report or block ${name}`}
+                            title="Report or block"
+                            className={buttonVariants({
+                              variant: "ghost",
+                              size: "icon-sm",
+                              className:
+                                "shrink-0 text-muted-foreground hover:text-destructive",
+                            })}
+                          >
+                            <Flag className="h-4 w-4" />
+                          </Link>
                         )}
-                        <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                          {initials(name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium leading-tight truncate">
-                          {name}
-                          {isMe && (
-                            <span className="ml-1 text-muted-foreground font-normal">
-                              (you)
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                          <Clock className="h-3 w-3 shrink-0" />
-                          {formatWindow(
-                            t.depart_window_start,
-                            t.depart_window_end,
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          {t.pickup_area}
-                        </p>
                       </div>
-                      {!isMe && (
-                        <Link
-                          href={`/report/${t.user_id}?from=${encodeURIComponent(
-                            `/groups/${groupId}`,
-                          )}`}
-                          aria-label={`Report or block ${name}`}
-                          title="Report or block"
-                          className={buttonVariants({
-                            variant: "ghost",
-                            size: "icon-sm",
-                            className:
-                              "shrink-0 text-muted-foreground hover:text-destructive",
-                          })}
-                        >
-                          <Flag className="h-4 w-4" />
-                        </Link>
+                      {!isMe && rideCompleted && (
+                        <div className="mt-2 flex items-center gap-2 pl-[3.75rem]">
+                          <span className="text-xs text-muted-foreground">
+                            {myScore ? "Your rating" : "Rate this ride"}
+                          </span>
+                          <RatingStars
+                            groupId={groupId}
+                            rateeId={t.user_id}
+                            current={myScore}
+                          />
+                        </div>
                       )}
                     </li>
                   );

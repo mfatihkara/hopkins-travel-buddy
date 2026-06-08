@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { Plane, MapPin, Plus, ArrowRight, Search, Trash2, Flag } from "lucide-react";
+import { Plane, MapPin, Plus, ArrowRight, Search, Trash2, Flag, Star } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { joinTrip, deleteTrip } from "./trips/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -67,10 +67,12 @@ function TripCard({
   trip,
   rightSlot,
   badge,
+  rating,
 }: {
   trip: TripRow;
   rightSlot?: React.ReactNode;
   badge?: React.ReactNode;
+  rating?: { avg: number; count: number };
 }) {
   return (
     <Card className="py-0">
@@ -103,6 +105,12 @@ function TripCard({
               {trip.profiles && (
                 <span className="text-muted-foreground/70">
                   · @{displayName(trip.profiles)}
+                </span>
+              )}
+              {rating && (
+                <span className="inline-flex items-center gap-0.5 text-muted-foreground/90">
+                  · <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  {rating.avg.toFixed(1)}
                 </span>
               )}
             </p>
@@ -213,7 +221,41 @@ export default async function Home({
     .filter((t) => !activeAirport || t.airport === activeAirport)
     .filter((t) => !activeDate || etDate(t.depart_window_start) === activeDate);
 
+  // Reputation summaries for the people shown in the discovery feed.
+  const otherUserIds = [...new Set(otherTrips.map((t) => t.user_id))];
+  const ratingByUser = new Map<string, { avg: number; count: number }>();
+  if (otherUserIds.length > 0) {
+    const { data: rs } = await supabase
+      .from("profile_ratings")
+      .select("user_id, avg_score, rating_count")
+      .in("user_id", otherUserIds);
+    for (const s of rs ?? []) {
+      ratingByUser.set(s.user_id as string, {
+        avg: Number(s.avg_score),
+        count: s.rating_count as number,
+      });
+    }
+  }
+
   const todayEt = etDate(new Date().toISOString());
+
+  // Past rides the user was matched into — surfaced so they can rate buddies.
+  const { data: pastData } = await supabase
+    .from("trips")
+    .select("id, airport, depart_window_start, depart_window_end, group_id")
+    .eq("user_id", user.id)
+    .not("group_id", "is", null)
+    .lt("depart_window_end", new Date().toISOString())
+    .order("depart_window_end", { ascending: false })
+    .limit(20);
+
+  const seenPastGroups = new Set<string>();
+  const pastRides = (pastData ?? []).filter((t) => {
+    const g = t.group_id as string | null;
+    if (!g || seenPastGroups.has(g)) return false;
+    seenPastGroups.add(g);
+    return true;
+  });
 
   return (
     <main className="min-h-dvh">
@@ -336,6 +378,7 @@ export default async function Home({
                   <TripCard
                     key={t.id}
                     trip={t}
+                    rating={ratingByUser.get(t.user_id)}
                     badge={
                       sharedGroup ? (
                         <Badge className="bg-primary/15 text-primary ring-primary/20 ring-1">
@@ -388,6 +431,40 @@ export default async function Home({
             </div>
           )}
         </section>
+
+        {pastRides.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Past rides
+            </h2>
+            <div className="space-y-3">
+              {pastRides.map((t) => (
+                <Card key={t.id} className="py-0">
+                  <CardContent className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <Plane className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium leading-tight">
+                        {t.airport} · {formatDate(t.depart_window_start)}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Rate the buddies you rode with
+                      </p>
+                    </div>
+                    <Link
+                      href={`/groups/${t.group_id}`}
+                      className={buttonVariants({ variant: "outline", size: "sm" })}
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                      Rate
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );
