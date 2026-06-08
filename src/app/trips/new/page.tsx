@@ -34,18 +34,6 @@ export default async function NewTripPage({
         </div>
       </header>
 
-      <div className="mx-auto max-w-md px-4 pt-6">
-        <div className="rounded-2xl bg-gradient-to-br from-primary to-[#3f6fb0] px-5 py-5 text-primary-foreground shadow-sm">
-          <h2 className="text-xl font-bold leading-tight">
-            Find your ride buddy
-          </h2>
-          <p className="mt-1 text-sm text-primary-foreground/80">
-            Post where and when you&apos;re headed — we&apos;ll match you with
-            classmates going the same way.
-          </p>
-        </div>
-      </div>
-
       <NewTripForm error={params.error} />
     </main>
   );
