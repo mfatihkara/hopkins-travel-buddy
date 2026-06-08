@@ -47,5 +47,5 @@ export async function updateTrip(formData: FormData) {
   }
 
   revalidatePath("/");
-  redirect("/");
+  redirect("/?message=" + encodeURIComponent("Changes saved."));
 }
