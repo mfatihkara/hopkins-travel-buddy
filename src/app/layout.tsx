@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { cookies } from "next/headers";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 import { createClient } from "@/utils/supabase/server";
 import { cn } from "@/lib/utils";
 import AppNav from "./AppNav";
@@ -51,17 +52,28 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" className={cn("font-sans antialiased", geist.variable)}>
+    <html
+      lang="en"
+      className={cn("font-sans antialiased", geist.variable)}
+      suppressHydrationWarning
+    >
       <body className="min-h-dvh bg-background text-foreground">
-        {user ? (
-          <>
-            <AppNav userId={user.id} initialUnread={unread} />
-            <div className="pb-20 md:pb-0 md:pl-60">{children}</div>
-          </>
-        ) : (
-          children
-        )}
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {user ? (
+            <>
+              <AppNav userId={user.id} initialUnread={unread} />
+              <div className="pb-20 md:pb-0 md:pl-60">{children}</div>
+            </>
+          ) : (
+            children
+          )}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
