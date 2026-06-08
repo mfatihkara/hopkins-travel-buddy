@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import FeedFilters from "./FeedFilters";
+import ShareTripButton from "@/components/ShareTripButton";
 
 const TZ = "America/New_York";
 
@@ -504,18 +505,25 @@ export default async function Home({
                           View <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       ) : (
-                        <Link
-                          href={`/trips/${t.id}/edit`}
-                          aria-label="Edit trip"
-                          title="Edit trip"
-                          className={buttonVariants({
-                            variant: "ghost",
-                            size: "icon-sm",
-                            className: "text-muted-foreground hover:text-foreground",
-                          })}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Link>
+                        <>
+                          <ShareTripButton
+                            tripId={t.id}
+                            airport={t.airport}
+                            date={formatDate(t.depart_window_start)}
+                          />
+                          <Link
+                            href={`/trips/${t.id}/edit`}
+                            aria-label="Edit trip"
+                            title="Edit trip"
+                            className={buttonVariants({
+                              variant: "ghost",
+                              size: "icon-sm",
+                              className: "text-muted-foreground hover:text-foreground",
+                            })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </>
                       )}
                       <form action={deleteTrip}>
                         <input type="hidden" name="trip_id" value={t.id} />
