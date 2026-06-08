@@ -47,6 +47,7 @@ export async function joinTrip(formData: FormData) {
   if (error) {
     const msg = error.message;
     if (msg.includes("Not authenticated")) redirect("/login");
+    if (msg.includes("Blocked")) home("You can't join this trip.");
     if (msg.includes("No compatible")) redirect(`/trips/join/${otherTripId}`);
     if (msg.includes("Cannot join your own")) home("You can't join your own trip.");
     if (msg.includes("Trip is closed")) home("That trip is closed.");
@@ -80,6 +81,7 @@ export async function joinTripCreatingMine(formData: FormData) {
   if (error) {
     const msg = error.message;
     if (msg.includes("Not authenticated")) redirect("/login");
+    if (msg.includes("Blocked")) home("You can't join this trip.");
     if (msg.includes("Cannot join your own")) home("You can't join your own trip.");
     if (msg.includes("Trip is closed")) home("That trip is closed.");
     if (msg.includes("Trip not found")) home("That trip no longer exists.");
