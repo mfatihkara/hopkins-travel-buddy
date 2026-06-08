@@ -1,6 +1,19 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { Plane, MapPin, Plus, ArrowRight, Search, Trash2, Flag, Star } from "lucide-react";
+import {
+  Plane,
+  MapPin,
+  Plus,
+  ArrowRight,
+  Search,
+  Trash2,
+  Flag,
+  Star,
+  ShieldCheck,
+  Wallet,
+  MessageCircle,
+  Users,
+} from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { joinTrip, deleteTrip } from "./trips/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -123,6 +136,160 @@ function TripCard({
   );
 }
 
+const STEPS = [
+  {
+    icon: Plane,
+    title: "Post your trip",
+    desc: "Tell us your airport, date, and the window you can leave.",
+  },
+  {
+    icon: Users,
+    title: "Get matched",
+    desc: "We pair you with classmates headed the same way.",
+  },
+  {
+    icon: Wallet,
+    title: "Coordinate & split",
+    desc: "Chat in-app, agree on a ride, and split the fare.",
+  },
+];
+
+const PERKS = [
+  {
+    icon: ShieldCheck,
+    title: "Verified students",
+    desc: "Everyone signs in with a .edu email.",
+    tone: "bg-primary/10 text-primary",
+  },
+  {
+    icon: Wallet,
+    title: "Split the cost",
+    desc: "Share the fare instead of paying solo.",
+    tone: "bg-[#68ACE5]/20 text-[#2b6cb0]",
+  },
+  {
+    icon: MessageCircle,
+    title: "Built-in chat",
+    desc: "Sort out pickup right in the app.",
+    tone: "bg-amber-100 text-amber-700",
+  },
+  {
+    icon: Star,
+    title: "Rated buddies",
+    desc: "Ride with people others vouch for.",
+    tone: "bg-rose-100 text-rose-600",
+  },
+];
+
+function Landing() {
+  return (
+    <main className="min-h-dvh pb-12">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary to-[#27508c] px-6 pb-12 pt-16 text-primary-foreground">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#68ACE5]/20 blur-2xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-white/10 blur-2xl"
+        />
+        <div className="relative mx-auto max-w-md space-y-5 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+            <Plane className="h-8 w-8" />
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight">Travel Buddy</h1>
+          <p className="mx-auto max-w-xs text-lg text-primary-foreground/85">
+            Share a ride to the airport with a verified classmate. Split the
+            cost, skip the solo Uber.
+          </p>
+          <Link
+            href="/login"
+            className={buttonVariants({
+              size: "xl",
+              className:
+                "w-full bg-white text-primary shadow-sm hover:bg-white/90",
+            })}
+          >
+            Sign in with your .edu email
+          </Link>
+          <p className="text-xs text-primary-foreground/70">
+            Students only · Free to use
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-md space-y-5 px-6 py-10">
+        <h2 className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          How it works
+        </h2>
+        <ol className="space-y-4">
+          {STEPS.map((s, i) => (
+            <li key={s.title} className="flex items-start gap-4">
+              <div className="relative flex flex-col items-center">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                  {i + 1}
+                </span>
+                {i < STEPS.length - 1 && (
+                  <span className="mt-1 h-8 w-px bg-border" aria-hidden />
+                )}
+              </div>
+              <div className="pt-1">
+                <p className="flex items-center gap-1.5 font-semibold leading-tight">
+                  <s.icon className="h-4 w-4 text-primary" />
+                  {s.title}
+                </p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{s.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="mx-auto max-w-md px-6">
+        <div className="grid grid-cols-2 gap-3">
+          {PERKS.map((p) => (
+            <Card key={p.title} className="py-0">
+              <CardContent className="space-y-2 px-4 py-4">
+                <span
+                  className={
+                    "flex h-9 w-9 items-center justify-center rounded-lg " +
+                    p.tone
+                  }
+                >
+                  <p.icon className="h-4 w-4" />
+                </span>
+                <p className="text-sm font-semibold leading-tight">{p.title}</p>
+                <p className="text-xs text-muted-foreground">{p.desc}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto mt-10 max-w-md space-y-4 px-6 text-center">
+        <Link
+          href="/login"
+          className={buttonVariants({ size: "xl", className: "w-full gap-2" })}
+        >
+          Get started
+          <ArrowRight className="h-5 w-5" />
+        </Link>
+        <p className="text-xs text-muted-foreground">
+          By continuing you agree to our{" "}
+          <Link href="/terms" className="underline underline-offset-2">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      </section>
+    </main>
+  );
+}
+
 export default async function Home({
   searchParams,
 }: {
@@ -142,40 +309,7 @@ export default async function Home({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <main className="flex min-h-dvh flex-col items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Plane className="h-8 w-8" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Travel Buddy
-            </h1>
-            <p className="text-muted-foreground">
-              Find a classmate at your school to share a ride to the airport.
-            </p>
-          </div>
-          <Link
-            href="/login"
-            className={buttonVariants({ size: "xl", className: "w-full" })}
-          >
-            Sign in with your .edu email
-          </Link>
-          <p className="text-xs text-muted-foreground">
-            By continuing you agree to our{" "}
-            <Link href="/terms" className="underline underline-offset-2">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="underline underline-offset-2">
-              Privacy Policy
-            </Link>
-            .
-          </p>
-        </div>
-      </main>
-    );
+    return <Landing />;
   }
 
   // Filter feed to the current user's school so students only see their own.
