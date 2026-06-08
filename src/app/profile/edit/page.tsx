@@ -16,11 +16,6 @@ import { unblockUser } from "@/app/safety/actions";
 // mobile connections. Give Server Actions on this page more room to finish.
 export const maxDuration = 60;
 
-// Avatar uploads relay through this server before reaching Supabase Storage,
-// which can take longer than the platform's default function timeout on slow
-// mobile connections. Give Server Actions on this page more room to finish.
-export const maxDuration = 60;
-
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -234,6 +229,15 @@ export default async function ProfileEditPage({
             )}
           </CardContent>
         </Card>
+
+        <nav className="flex items-center justify-center gap-4 pt-2 text-xs text-muted-foreground">
+          <Link href="/privacy" className="underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          <Link href="/terms" className="underline underline-offset-2">
+            Terms of Service
+          </Link>
+        </nav>
       </section>
     </main>
   );

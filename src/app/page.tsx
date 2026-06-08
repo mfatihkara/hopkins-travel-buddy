@@ -138,6 +138,17 @@ export default async function Home({
           >
             Sign in with your .edu email
           </Link>
+          <p className="text-xs text-muted-foreground">
+            By continuing you agree to our{" "}
+            <Link href="/terms" className="underline underline-offset-2">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline underline-offset-2">
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </div>
       </main>
     );
