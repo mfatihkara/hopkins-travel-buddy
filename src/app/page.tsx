@@ -332,6 +332,7 @@ export default async function Home({
     message?: string;
     airport?: string;
     date?: string;
+    area?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -382,12 +383,18 @@ export default async function Home({
     ? params.airport!
     : "";
   const activeDate = params.date ?? "";
-  const filtersActive = !!activeAirport || !!activeDate;
+  const activeArea = (params.area ?? "").trim();
+  const filtersActive = !!activeAirport || !!activeDate || !!activeArea;
 
   const otherTrips = all
     .filter((t) => t.user_id !== user.id)
     .filter((t) => !activeAirport || t.airport === activeAirport)
-    .filter((t) => !activeDate || etDate(t.depart_window_start) === activeDate);
+    .filter((t) => !activeDate || etDate(t.depart_window_start) === activeDate)
+    .filter(
+      (t) =>
+        !activeArea ||
+        t.pickup_area.toLowerCase().includes(activeArea.toLowerCase()),
+    );
 
   // Reputation summaries for the people shown in the discovery feed.
   const otherUserIds = [...new Set(otherTrips.map((t) => t.user_id))];
@@ -554,6 +561,7 @@ export default async function Home({
           <FeedFilters
             airport={activeAirport}
             date={activeDate}
+            area={activeArea}
             minDate={todayEt}
           />
           {otherTrips.length === 0 ? (
