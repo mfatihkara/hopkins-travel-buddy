@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import FeedFilters from "./FeedFilters";
 import ShareTripButton from "@/components/ShareTripButton";
+import ThemeSwitch from "@/components/ThemeSwitch";
 
 const TZ = "America/New_York";
 
@@ -427,13 +428,14 @@ export default async function Home({
   return (
     <main className="min-h-dvh">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-md items-center px-4 py-3">
+        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Plane className="h-4 w-4" />
             </div>
             <span className="font-semibold">Travel Buddy</span>
           </div>
+          <ThemeSwitch />
         </div>
       </header>
 
