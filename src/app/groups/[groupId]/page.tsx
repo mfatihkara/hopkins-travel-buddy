@@ -241,17 +241,39 @@ export default async function GroupPage({
                   return (
                     <li key={t.id} className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <Avatar size="lg" className="shrink-0">
-                          {t.profiles?.avatar_url && (
-                            <AvatarImage src={t.profiles.avatar_url} alt={name} />
-                          )}
-                          <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                            {initials(name)}
-                          </AvatarFallback>
-                        </Avatar>
+                        {isMe ? (
+                          <Avatar size="lg" className="shrink-0">
+                            {t.profiles?.avatar_url && (
+                              <AvatarImage src={t.profiles.avatar_url} alt={name} />
+                            )}
+                            <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                              {initials(name)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <Link href={`/profile/${t.user_id}`} className="shrink-0">
+                            <Avatar size="lg">
+                              {t.profiles?.avatar_url && (
+                                <AvatarImage src={t.profiles.avatar_url} alt={name} />
+                              )}
+                              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                                {initials(name)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </Link>
+                        )}
                         <div className="min-w-0 flex-1">
                           <p className="font-medium leading-tight truncate">
-                            {name}
+                            {isMe ? (
+                              name
+                            ) : (
+                              <Link
+                                href={`/profile/${t.user_id}`}
+                                className="hover:text-primary hover:underline"
+                              >
+                                {name}
+                              </Link>
+                            )}
                             {isMe && (
                               <span className="ml-1 text-muted-foreground font-normal">
                                 (you)
