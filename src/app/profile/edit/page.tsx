@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, User, Phone, Camera, ShieldOff, Bell, LogOut } from "lucide-react";
+import { ArrowLeft, User, Phone, Camera, ShieldOff, Bell, LogOut, Moon } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -239,6 +240,16 @@ export default async function ProfileEditPage({
             {params.message}
           </div>
         )}
+
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 pt-2">
+          <Moon className="h-3.5 w-3.5" />
+          Appearance
+        </h2>
+        <Card className="py-0">
+          <CardContent className="px-4 py-4">
+            <ThemeToggle />
+          </CardContent>
+        </Card>
 
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 pt-2">
           <ShieldOff className="h-3.5 w-3.5" />
