@@ -1,68 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, Plane, Calendar, Clock, MapPin } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { postTrip } from "./actions";
-
-const selectClass =
-  "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus:border-ring focus:ring-3 focus:ring-ring/40";
-
-function TimePicker({ name }: { name: string }) {
-  return (
-    <div className="flex gap-2">
-      <select
-        name={`${name}_hour`}
-        required
-        defaultValue=""
-        className={selectClass}
-        aria-label="Hour"
-      >
-        <option value="" disabled>
-          Hr
-        </option>
-        {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-          <option key={h} value={h}>
-            {h}
-          </option>
-        ))}
-      </select>
-      <select
-        name={`${name}_min`}
-        required
-        defaultValue=""
-        className={selectClass}
-        aria-label="Minute"
-      >
-        <option value="" disabled>
-          Min
-        </option>
-        {["00", "15", "30", "45"].map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
-      <select
-        name={`${name}_period`}
-        required
-        defaultValue=""
-        className={selectClass}
-        aria-label="AM or PM"
-      >
-        <option value="" disabled>
-          —
-        </option>
-        <option value="AM">AM</option>
-        <option value="PM">PM</option>
-      </select>
-    </div>
-  );
-}
+import NewTripForm from "./NewTripForm";
 
 export default async function NewTripPage({
   searchParams,
@@ -93,82 +34,19 @@ export default async function NewTripPage({
         </div>
       </header>
 
-      <form
-        action={postTrip}
-        className="mx-auto max-w-md px-4 py-6 space-y-4 pb-[max(env(safe-area-inset-bottom),1.5rem)]"
-      >
-        <Card className="py-0">
-          <CardContent className="px-4 py-5 space-y-5">
-            <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Plane className="h-4 w-4 text-muted-foreground" />
-                Airport
-              </Label>
-              <Input
-                type="text"
-                name="airport"
-                required
-                maxLength={3}
-                minLength={3}
-                pattern="[A-Za-z]{3}"
-                placeholder="BWI, JFK, LAX…"
-                autoCapitalize="characters"
-                autoComplete="off"
-                className="h-11 uppercase tracking-wider"
-              />
-              <p className="text-xs text-muted-foreground">
-                3-letter airport code (IATA)
-              </p>
-            </div>
+      <div className="mx-auto max-w-md px-4 pt-6">
+        <div className="rounded-2xl bg-gradient-to-br from-primary to-[#3f6fb0] px-5 py-5 text-primary-foreground shadow-sm">
+          <h2 className="text-xl font-bold leading-tight">
+            Find your ride buddy
+          </h2>
+          <p className="mt-1 text-sm text-primary-foreground/80">
+            Post where and when you&apos;re headed — we&apos;ll match you with
+            classmates going the same way.
+          </p>
+        </div>
+      </div>
 
-            <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                Date
-              </Label>
-              <Input type="date" name="date" required className="h-11" />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                Leave between
-              </Label>
-              <TimePicker name="time_earliest" />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>…and</Label>
-              <TimePicker name="time_latest" />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                Pickup area
-              </Label>
-              <Input
-                type="text"
-                name="pickup_area"
-                required
-                maxLength={100}
-                placeholder="Charles Village, Bloomberg…"
-                className="h-11"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {params.error && (
-          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 ring-1 ring-red-200">
-            {params.error}
-          </div>
-        )}
-
-        <Button type="submit" size="xl" className="w-full">
-          Post trip
-        </Button>
-      </form>
+      <NewTripForm error={params.error} />
     </main>
   );
 }
