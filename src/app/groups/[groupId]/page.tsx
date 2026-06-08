@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, Plane, MapPin, Clock, LogOut, Flag, Star } from "lucide-react";
+import { ArrowLeft, Plane, MapPin, Clock, LogOut, Flag, Star, Wallet, Users } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Chat from "./Chat";
 import RatingStars from "./RatingStars";
-import { leaveGroup } from "./actions";
+import { leaveGroup, setGroupFare } from "./actions";
 
 const TZ = "America/New_York";
 
@@ -73,7 +74,7 @@ export default async function GroupPage({
     await Promise.all([
       supabase
         .from("trip_groups")
-        .select("id, airport, created_at")
+        .select("id, airport, created_at, fare_estimate_cents")
         .eq("id", groupId)
         .maybeSingle(),
       supabase
@@ -150,6 +151,25 @@ export default async function GroupPage({
       { avg: Number(s.avg_score), count: s.rating_count as number },
     ]),
   );
+
+  // Fare-split estimate. Defaults are rough starting points the group edits to
+  // a real rideshare quote.
+  const DEFAULT_FARE_CENTS: Record<string, number> = {
+    BWI: 4500,
+    DCA: 8000,
+    IAD: 9500,
+  };
+  const totalFareCents =
+    group.fare_estimate_cents ?? DEFAULT_FARE_CENTS[group.airport] ?? 6000;
+  const isCustomFare = group.fare_estimate_cents != null;
+  const riderCount = Math.max(members.length, 1);
+  const perPersonCents = Math.ceil(totalFareCents / riderCount);
+  const usd = (cents: number) =>
+    (cents / 100).toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+    });
 
   return (
     <main className="min-h-dvh">
@@ -293,6 +313,74 @@ export default async function GroupPage({
                   );
                 })}
               </ul>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Cost split
+          </h2>
+          <Card className="py-0">
+            <CardContent className="px-4 py-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Estimated per person
+                  </p>
+                  <p className="text-2xl font-bold leading-tight">
+                    {usd(perPersonCents)}
+                  </p>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Wallet className="h-5 w-5" />
+                </div>
+              </div>
+
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5 shrink-0" />
+                {usd(totalFareCents)} split {riderCount}{" "}
+                {riderCount === 1 ? "way" : "ways"}
+                {!isCustomFare && " · estimate"}
+              </p>
+
+              <form
+                action={setGroupFare}
+                className="flex items-end gap-2 border-t pt-4"
+              >
+                <input type="hidden" name="group_id" value={groupId} />
+                <div className="flex-1 space-y-1">
+                  <label
+                    htmlFor="fare"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Set the real fare (total)
+                  </label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      $
+                    </span>
+                    <Input
+                      id="fare"
+                      name="fare"
+                      type="number"
+                      min={0}
+                      max={10000}
+                      step="0.01"
+                      defaultValue={(totalFareCents / 100).toFixed(2)}
+                      className="h-10 pl-6"
+                    />
+                  </div>
+                </div>
+                <Button type="submit" variant="outline" size="lg">
+                  Save
+                </Button>
+              </form>
+
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Just an estimate to split costs — confirm the actual price in
+                your rideshare app. In-app payment is coming soon.
+              </p>
             </CardContent>
           </Card>
         </section>

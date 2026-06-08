@@ -70,3 +70,39 @@ export async function rateMember(formData: FormData) {
   revalidatePath(`/groups/${groupId}`);
   redirect(`/groups/${groupId}?message=` + encodeURIComponent("Thanks for rating!"));
 }
+
+export async function setGroupFare(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const dollars = Number(formData.get("fare") ?? NaN);
+
+  const back = (msg: string): never =>
+    redirect(`/groups/${groupId}?error=` + encodeURIComponent(msg));
+
+  if (!groupId) redirect("/");
+  if (!Number.isFinite(dollars) || dollars < 0 || dollars > 10000) {
+    back("Enter a fare between $0 and $10,000.");
+  }
+
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase.rpc("set_group_fare", {
+    p_group_id: groupId,
+    p_cents: Math.round(dollars * 100),
+  });
+
+  if (error) {
+    const msg = error.message;
+    if (msg.includes("Not a member")) back("You're not in this group.");
+    if (msg.includes("Invalid amount")) back("Enter a valid fare.");
+    back(msg);
+  }
+
+  revalidatePath(`/groups/${groupId}`);
+  redirect(`/groups/${groupId}?message=` + encodeURIComponent("Fare estimate updated."));
+}
