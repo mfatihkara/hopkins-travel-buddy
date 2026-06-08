@@ -20,6 +20,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import FeedFilters from "./FeedFilters";
 
 const TZ = "America/New_York";
@@ -223,11 +224,10 @@ function Landing() {
           </p>
           <Link
             href="/login"
-            className={buttonVariants({
-              size: "xl",
-              className:
-                "w-full bg-white text-primary shadow-sm hover:bg-white/90",
-            })}
+            className={cn(
+              buttonVariants({ size: "xl" }),
+              "w-full bg-white text-primary shadow-sm hover:bg-white/90",
+            )}
           >
             Sign in with your .edu email
           </Link>
