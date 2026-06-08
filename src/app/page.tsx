@@ -92,18 +92,27 @@ function TripCard({
     <Card className="py-0">
       <CardContent className="px-4 py-4">
         <div className="flex items-start gap-3">
-          <Avatar size="lg" className="shrink-0">
-            {trip.profiles?.avatar_url && (
-              <AvatarImage src={trip.profiles.avatar_url} alt={displayName(trip.profiles)} />
-            )}
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {trip.profiles ? (
-                initials(displayName(trip.profiles))
-              ) : (
+          {trip.profiles ? (
+            <Link href={`/profile/${trip.user_id}`} className="shrink-0">
+              <Avatar size="lg">
+                {trip.profiles.avatar_url && (
+                  <AvatarImage
+                    src={trip.profiles.avatar_url}
+                    alt={displayName(trip.profiles)}
+                  />
+                )}
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {initials(displayName(trip.profiles))}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <Avatar size="lg" className="shrink-0">
+              <AvatarFallback className="bg-primary/10 text-primary">
                 <Plane className="h-5 w-5" />
-              )}
-            </AvatarFallback>
-          </Avatar>
+              </AvatarFallback>
+            </Avatar>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between gap-2">
               <p className="font-semibold leading-tight">
@@ -117,9 +126,12 @@ function TripCard({
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{trip.pickup_area}</span>
               {trip.profiles && (
-                <span className="text-muted-foreground/70">
+                <Link
+                  href={`/profile/${trip.user_id}`}
+                  className="text-muted-foreground/70 hover:text-primary hover:underline"
+                >
                   · @{displayName(trip.profiles)}
-                </span>
+                </Link>
               )}
               {rating && (
                 <span className="inline-flex items-center gap-0.5 text-muted-foreground/90">
