@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import FeedFilters from "./FeedFilters";
 import ShareTripButton from "@/components/ShareTripButton";
 import ThemeSwitch from "@/components/ThemeSwitch";
+import FlashToast from "@/components/FlashToast";
 
 const TZ = "America/New_York";
 
@@ -454,16 +455,7 @@ export default async function Home({
           </p>
         </div>
 
-        {params.message && (
-          <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 ring-1 ring-green-200">
-            {params.message}
-          </div>
-        )}
-        {params.error && (
-          <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 ring-1 ring-red-200">
-            {params.error}
-          </div>
-        )}
+        <FlashToast message={params.message} error={params.error} />
 
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
