@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, User, Phone, Camera, ShieldOff, Bell } from "lucide-react";
+import { ArrowLeft, User, Phone, Camera, ShieldOff, Bell, LogOut } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -289,6 +289,18 @@ export default async function ProfileEditPage({
             )}
           </CardContent>
         </Card>
+
+        <form action="/auth/sign-out" method="post">
+          <Button
+            type="submit"
+            variant="outline"
+            size="lg"
+            className="w-full gap-2 text-muted-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
+        </form>
 
         <nav className="flex items-center justify-center gap-4 pt-2 text-xs text-muted-foreground">
           <Link href="/privacy" className="underline underline-offset-2">

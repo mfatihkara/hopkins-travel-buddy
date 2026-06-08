@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { Plane, MapPin, Plus, ArrowRight, LogOut, Search, Trash2, Flag } from "lucide-react";
+import { Plane, MapPin, Plus, ArrowRight, Search, Trash2, Flag } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { joinTrip, deleteTrip } from "./trips/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FeedFilters from "./FeedFilters";
-import NotificationBell from "./NotificationBell";
 
 const TZ = "America/New_York";
 
@@ -174,18 +173,6 @@ export default async function Home({
   // Filter feed to the current user's school so students only see their own.
   const userSchool = user.email?.split("@")[1] ?? "";
 
-  const { data: myProfile } = await supabase
-    .from("profiles")
-    .select("full_name, avatar_url")
-    .eq("id", user.id)
-    .single();
-
-  const { count: unreadCount } = await supabase
-    .from("notifications")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .is("read_at", null);
-
   // User ids in a block relationship with me (either direction) — their trips
   // are hidden from my feed and mine from theirs.
   const { data: blockedRows } = await supabase.rpc("blocked_with_me");
@@ -229,37 +216,14 @@ export default async function Home({
   const todayEt = etDate(new Date().toISOString());
 
   return (
-    <main className="min-h-dvh pb-28">
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
+    <main className="min-h-dvh">
+      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-md items-center px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Plane className="h-4 w-4" />
             </div>
             <span className="font-semibold">Travel Buddy</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <NotificationBell userId={user.id} initialUnread={unreadCount ?? 0} />
-            <Link href="/profile/edit" aria-label="Edit profile">
-              <Avatar size="sm">
-                {myProfile?.avatar_url && (
-                  <AvatarImage src={myProfile.avatar_url} alt={myProfile.full_name ?? "You"} />
-                )}
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {initials(myProfile?.full_name ?? user.email?.split("@")[0] ?? "?")}
-                </AvatarFallback>
-              </Avatar>
-            </Link>
-            <form action="/auth/sign-out" method="post">
-              <Button
-                type="submit"
-                variant="ghost"
-                size="icon"
-                aria-label="Sign out"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </form>
           </div>
         </div>
       </header>
@@ -424,21 +388,6 @@ export default async function Home({
             </div>
           )}
         </section>
-      </div>
-
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3 backdrop-blur">
-        <div className="mx-auto max-w-md">
-          <Link
-            href="/trips/new"
-            className={buttonVariants({
-              size: "xl",
-              className: "w-full gap-2",
-            })}
-          >
-            <Plus className="h-5 w-5" />
-            Post a trip
-          </Link>
-        </div>
       </div>
     </main>
   );
