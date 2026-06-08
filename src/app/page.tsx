@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FeedFilters from "./FeedFilters";
+import NotificationBell from "./NotificationBell";
 
 const TZ = "America/New_York";
 
@@ -179,6 +180,12 @@ export default async function Home({
     .eq("id", user.id)
     .single();
 
+  const { count: unreadCount } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
   // User ids in a block relationship with me (either direction) — their trips
   // are hidden from my feed and mine from theirs.
   const { data: blockedRows } = await supabase.rpc("blocked_with_me");
@@ -232,6 +239,7 @@ export default async function Home({
             <span className="font-semibold">Travel Buddy</span>
           </div>
           <div className="flex items-center gap-1">
+            <NotificationBell userId={user.id} initialUnread={unreadCount ?? 0} />
             <Link href="/profile/edit" aria-label="Edit profile">
               <Avatar size="sm">
                 {myProfile?.avatar_url && (
