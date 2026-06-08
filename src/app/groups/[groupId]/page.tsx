@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, Plane, MapPin, Clock, LogOut, Flag, Star, Wallet, Users } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Plane, MapPin, Clock, LogOut, Flag, Star, Wallet, Users } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -222,6 +222,16 @@ export default async function GroupPage({
             {errorMsg}
           </div>
         )}
+
+        <div className="flex justify-end">
+          <Link
+            href={`/groups/${groupId}/calendar`}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            <CalendarPlus className="h-3.5 w-3.5" />
+            Add to calendar
+          </Link>
+        </div>
 
         <section className="space-y-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
