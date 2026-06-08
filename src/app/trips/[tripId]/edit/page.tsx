@@ -84,18 +84,6 @@ export default async function EditTripPage({
         </div>
       </header>
 
-      <div className="mx-auto max-w-md px-4 pt-6">
-        <div className="rounded-2xl bg-gradient-to-br from-primary to-[#3f6fb0] px-5 py-5 text-primary-foreground shadow-sm">
-          <h2 className="text-xl font-bold leading-tight">
-            Update your details
-          </h2>
-          <p className="mt-1 text-sm text-primary-foreground/80">
-            Change your airport, date, time window, or pickup spot — your post
-            stays live and keeps its place in the feed.
-          </p>
-        </div>
-      </div>
-
       <NewTripForm
         error={error}
         mode="edit"
