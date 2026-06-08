@@ -53,17 +53,42 @@ function SectionIcon({
   );
 }
 
-export default function NewTripForm({ error }: { error?: string }) {
-  const [airport, setAirport] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
-  const [date, setDate] = useState("");
-  const [eHour, setEHour] = useState("");
-  const [eMin, setEMin] = useState("");
-  const [ePeriod, setEPeriod] = useState("");
-  const [lHour, setLHour] = useState("");
-  const [lMin, setLMin] = useState("");
-  const [lPeriod, setLPeriod] = useState("");
-  const [pickup, setPickup] = useState("");
+type TimeParts = { hour: string; min: string; period: string };
+
+export type TripFormInitial = {
+  airport: string;
+  date: string;
+  earliest: TimeParts;
+  latest: TimeParts;
+  pickup: string;
+};
+
+export default function NewTripForm({
+  error,
+  mode = "create",
+  tripId,
+  initial,
+  action,
+}: {
+  error?: string;
+  mode?: "create" | "edit";
+  tripId?: string;
+  initial?: TripFormInitial;
+  action?: (formData: FormData) => void | Promise<void>;
+}) {
+  const isEdit = mode === "edit";
+  const [airport, setAirport] = useState(initial?.airport ?? "");
+  const [showCustom, setShowCustom] = useState(
+    () => !!initial?.airport && !QUICK_AIRPORTS.includes(initial.airport),
+  );
+  const [date, setDate] = useState(initial?.date ?? "");
+  const [eHour, setEHour] = useState(initial?.earliest.hour ?? "");
+  const [eMin, setEMin] = useState(initial?.earliest.min ?? "");
+  const [ePeriod, setEPeriod] = useState(initial?.earliest.period ?? "");
+  const [lHour, setLHour] = useState(initial?.latest.hour ?? "");
+  const [lMin, setLMin] = useState(initial?.latest.min ?? "");
+  const [lPeriod, setLPeriod] = useState(initial?.latest.period ?? "");
+  const [pickup, setPickup] = useState(initial?.pickup ?? "");
 
   const startLabel = timeLabel(eHour, eMin, ePeriod);
   const endLabel = timeLabel(lHour, lMin, lPeriod);
@@ -74,9 +99,13 @@ export default function NewTripForm({ error }: { error?: string }) {
 
   return (
     <form
-      action={postTrip}
+      action={action ?? postTrip}
       className="mx-auto max-w-md px-4 py-6 space-y-5 pb-[max(env(safe-area-inset-bottom),1.5rem)]"
     >
+      {isEdit && tripId && (
+        <input type="hidden" name="trip_id" value={tripId} />
+      )}
+
       {/* Live preview */}
       <div className="space-y-2">
         <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
@@ -286,7 +315,7 @@ export default function NewTripForm({ error }: { error?: string }) {
 
       <Button type="submit" size="xl" className="w-full gap-2">
         <Plane className="h-5 w-5" />
-        Post trip
+        {isEdit ? "Save changes" : "Post trip"}
       </Button>
     </form>
   );

@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Search,
   Trash2,
+  Pencil,
   Flag,
   Star,
   ShieldCheck,
@@ -492,7 +493,7 @@ export default async function Home({
                   }
                   rightSlot={
                     <div className="flex items-center gap-2">
-                      {t.group_id && (
+                      {t.group_id ? (
                         <Link
                           href={`/groups/${t.group_id}`}
                           className={buttonVariants({
@@ -501,6 +502,19 @@ export default async function Home({
                           })}
                         >
                           View <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/trips/${t.id}/edit`}
+                          aria-label="Edit trip"
+                          title="Edit trip"
+                          className={buttonVariants({
+                            variant: "ghost",
+                            size: "icon-sm",
+                            className: "text-muted-foreground hover:text-foreground",
+                          })}
+                        >
+                          <Pencil className="h-4 w-4" />
                         </Link>
                       )}
                       <form action={deleteTrip}>
