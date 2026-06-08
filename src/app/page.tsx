@@ -7,8 +7,19 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import FeedFilters from "./FeedFilters";
 
 const TZ = "America/New_York";
+
+const AIRPORTS = ["BWI", "IAD", "DCA"];
+
+// Calendar date (YYYY-MM-DD) of a timestamp in the app's timezone, so date
+// filtering lines up with what users see in the cards.
+function etDate(iso: string) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(
+    new Date(iso),
+  );
+}
 
 function formatDate(start: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -107,7 +118,12 @@ function TripCard({
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    message?: string;
+    airport?: string;
+    date?: string;
+  }>;
 }) {
   const params = await searchParams;
 
@@ -187,10 +203,23 @@ export default async function Home({
 
   const all = (data ?? []) as unknown as TripRow[];
   const myTrips = all.filter((t) => t.user_id === user.id);
-  const otherTrips = all.filter((t) => t.user_id !== user.id);
   const myGroupIds = new Set(
     myTrips.map((t) => t.group_id).filter((g): g is string => !!g),
   );
+
+  // Filters apply to the discovery feed only; "Your trips" always shows in full.
+  const activeAirport = AIRPORTS.includes(params.airport ?? "")
+    ? params.airport!
+    : "";
+  const activeDate = params.date ?? "";
+  const filtersActive = !!activeAirport || !!activeDate;
+
+  const otherTrips = all
+    .filter((t) => t.user_id !== user.id)
+    .filter((t) => !activeAirport || t.airport === activeAirport)
+    .filter((t) => !activeDate || etDate(t.depart_window_start) === activeDate);
+
+  const todayEt = etDate(new Date().toISOString());
 
   return (
     <main className="min-h-dvh pb-28">
@@ -314,10 +343,17 @@ export default async function Home({
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Other students
           </h2>
+          <FeedFilters
+            airport={activeAirport}
+            date={activeDate}
+            minDate={todayEt}
+          />
           {otherTrips.length === 0 ? (
             <Card className="py-0">
               <CardContent className="px-4 py-8 text-center text-sm text-muted-foreground">
-                No other trips right now. Tell a friend!
+                {filtersActive
+                  ? "No trips match your filters. Try clearing them."
+                  : "No other trips right now. Tell a friend!"}
               </CardContent>
             </Card>
           ) : (
