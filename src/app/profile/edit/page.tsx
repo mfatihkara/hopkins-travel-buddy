@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, User, Phone, Camera, ShieldOff } from "lucide-react";
+import { ArrowLeft, User, Phone, Camera, ShieldOff, Bell } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,33 @@ function initials(name: string) {
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function NotifyToggle({
+  name,
+  label,
+  hint,
+  defaultChecked,
+}: {
+  name: string;
+  label: string;
+  hint: string;
+  defaultChecked: boolean;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start justify-between gap-3">
+      <span className="min-w-0">
+        <span className="block text-sm font-medium leading-tight">{label}</span>
+        <span className="block text-xs text-muted-foreground mt-0.5">{hint}</span>
+      </span>
+      <input
+        type="checkbox"
+        name={name}
+        defaultChecked={defaultChecked}
+        className="mt-0.5 size-5 shrink-0 accent-primary"
+      />
+    </label>
+  );
 }
 
 type BlockedProfile = {
@@ -46,7 +73,9 @@ export default async function ProfileEditPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, phone_number, avatar_url, email")
+    .select(
+      "full_name, phone_number, avatar_url, email, notify_match, notify_message, notify_reminder",
+    )
     .eq("id", user.id)
     .single();
 
@@ -159,6 +188,37 @@ export default async function ProfileEditPage({
               <Label className="text-muted-foreground">School email</Label>
               <p className="text-sm">{profile?.email}</p>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="py-0">
+          <CardContent className="px-4 py-5 space-y-4">
+            <div className="flex items-center gap-1.5">
+              <Bell className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-sm font-medium">Notifications</h2>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Choose what shows up in your in-app notifications.
+            </p>
+
+            <NotifyToggle
+              name="notify_match"
+              label="New ride matches"
+              hint="When someone joins your trip."
+              defaultChecked={profile?.notify_match ?? true}
+            />
+            <NotifyToggle
+              name="notify_message"
+              label="Group messages"
+              hint="When someone messages your ride group."
+              defaultChecked={profile?.notify_message ?? true}
+            />
+            <NotifyToggle
+              name="notify_reminder"
+              label="Ride reminders"
+              hint="A heads-up before your departure window."
+              defaultChecked={profile?.notify_reminder ?? true}
+            />
           </CardContent>
         </Card>
 

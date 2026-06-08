@@ -28,9 +28,13 @@ export async function updateProfile(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const updates: Record<string, string | null> = {
+  const updates: Record<string, string | boolean | null> = {
     full_name: fullName,
     phone_number: phone || null,
+    // Unchecked checkboxes are absent from FormData, so absence means "off".
+    notify_match: formData.get("notify_match") != null,
+    notify_message: formData.get("notify_message") != null,
+    notify_reminder: formData.get("notify_reminder") != null,
   };
 
   if (avatar instanceof File && avatar.size > 0) {
