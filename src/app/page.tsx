@@ -6,7 +6,6 @@ import {
   Plus,
   ArrowRight,
   Search,
-  Trash2,
   Pencil,
   Flag,
   Star,
@@ -16,7 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
-import { joinTrip, deleteTrip } from "./trips/actions";
+import { joinTrip } from "./trips/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +25,7 @@ import FeedFilters from "./FeedFilters";
 import ShareTripButton from "@/components/ShareTripButton";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import FlashToast from "@/components/FlashToast";
+import DeleteTripButton from "@/components/DeleteTripButton";
 
 const TZ = "America/New_York";
 
@@ -526,18 +526,7 @@ export default async function Home({
                           </Link>
                         </>
                       )}
-                      <form action={deleteTrip}>
-                        <input type="hidden" name="trip_id" value={t.id} />
-                        <Button
-                          type="submit"
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label="Delete trip"
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </form>
+                      <DeleteTripButton tripId={t.id} />
                     </div>
                   }
                 />
