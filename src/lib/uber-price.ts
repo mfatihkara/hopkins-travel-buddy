@@ -1,3 +1,25 @@
+const AIRPORT_NAMES: Record<string, string> = {
+  BWI: "BWI Baltimore Washington International Airport",
+  DCA: "Ronald Reagan Washington National Airport DCA",
+  IAD: "Washington Dulles International Airport IAD",
+};
+
+/**
+ * Returns an m.uber.com deep link with the pickup area and airport
+ * pre-filled. Opens the Uber app on mobile or the Uber website on desktop.
+ * No API key required.
+ */
+export function getUberDeepLink(pickupArea: string, airport: string): string {
+  const params = new URLSearchParams();
+  params.set("action", "setPickup");
+  params.set("pickup[formatted_address]", `${pickupArea}, Baltimore, MD`);
+  params.set(
+    "dropoff[formatted_address]",
+    AIRPORT_NAMES[airport] ?? `${airport} Airport`,
+  );
+  return `https://m.uber.com/ul/?${params.toString()}`;
+}
+
 // Airport terminal coordinates.
 const AIRPORT_COORDS: Record<string, { lat: number; lng: number }> = {
   BWI: { lat: 39.1754, lng: -76.6684 },
