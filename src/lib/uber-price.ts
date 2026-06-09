@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+
 // Airport terminal coordinates.
 const AIRPORT_COORDS: Record<string, { lat: number; lng: number }> = {
   BWI: { lat: 39.1754, lng: -76.6684 },
@@ -15,6 +17,36 @@ export type UberProduct = {
   duration_min: number;
 };
 
+// Exchange client credentials for an OAuth Bearer token.
+// Cached for 23 hours; the token TTL is 30 days so this is very conservative.
+const getAccessToken = unstable_cache(
+  async (): Promise<string | null> => {
+    const clientId = process.env.UBER_CLIENT_ID;
+    const clientSecret = process.env.UBER_CLIENT_SECRET;
+    if (!clientId || !clientSecret) return null;
+
+    try {
+      const res = await fetch("https://auth.uber.com/oauth/v2/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: clientId,
+          client_secret: clientSecret,
+        }),
+        cache: "no-store",
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data.access_token as string) ?? null;
+    } catch {
+      return null;
+    }
+  },
+  ["uber-access-token"],
+  { revalidate: 82800 }, // 23 h
+);
+
 async function geocode(
   address: string,
 ): Promise<{ lat: number; lng: number } | null> {
@@ -24,10 +56,9 @@ async function geocode(
       `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
       {
         headers: {
-          "User-Agent":
-            "HopkinsTravelBuddy/1.0 (contact@jointravelbuddy.com)",
+          "User-Agent": "TravelBuddyApp/1.0 (contact@jointravelbuddy.com)",
         },
-        next: { revalidate: 86400 }, // geocode rarely changes — cache 24 h
+        next: { revalidate: 86400 },
       },
     );
     if (!res.ok) return null;
@@ -40,15 +71,16 @@ async function geocode(
 }
 
 /**
- * Fetches Uber price estimates for a pickup area → airport route.
- * Returns null when UBER_SERVER_TOKEN is not set or the API call fails.
+ * Returns live Uber price estimates for a pickup area → airport route.
+ * Requires UBER_CLIENT_ID and UBER_CLIENT_SECRET env vars.
+ * Returns null when unconfigured or when the API call fails.
  */
 export async function getUberEstimates(
   pickupArea: string,
   airport: string,
   seatCount: number,
 ): Promise<UberProduct[] | null> {
-  const token = process.env.UBER_SERVER_TOKEN;
+  const token = await getAccessToken();
   if (!token) return null;
 
   const dest = AIRPORT_COORDS[airport];
@@ -65,14 +97,12 @@ export async function getUberEstimates(
 
   try {
     const res = await fetch(url.toString(), {
-      headers: { Authorization: `Token ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
       next: { revalidate: 900 }, // prices are live — cache 15 min
     });
     if (!res.ok) return null;
     const body = await res.json();
-    const prices = (
-      body.prices ?? []
-    ) as Array<{
+    const prices = (body.prices ?? []) as Array<{
       display_name: string;
       low_estimate: number | null;
       high_estimate: number | null;
