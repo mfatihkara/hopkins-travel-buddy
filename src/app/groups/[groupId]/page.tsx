@@ -12,6 +12,7 @@ import Chat from "./Chat";
 import RatingStars from "./RatingStars";
 import { leaveGroup, setGroupFare } from "./actions";
 import { getUberDeepLink } from "@/lib/uber-price";
+import PayButton from "./PayButton";
 
 const TZ = "America/New_York";
 
@@ -44,6 +45,7 @@ type Trip = {
   pickup_area: string;
   depart_window_start: string;
   depart_window_end: string;
+  paid_at: string | null;
   profiles: { email: string; full_name: string | null; avatar_url: string | null } | null;
 };
 
@@ -82,7 +84,7 @@ export default async function GroupPage({
       supabase
         .from("trips")
         .select(
-          "id, user_id, pickup_area, depart_window_start, depart_window_end, profiles ( email, full_name, avatar_url )",
+          "id, user_id, pickup_area, depart_window_start, depart_window_end, paid_at, profiles ( email, full_name, avatar_url )",
         )
         .eq("group_id", groupId)
         .order("depart_window_start", { ascending: true }),
@@ -185,6 +187,12 @@ export default async function GroupPage({
       currency: "USD",
       minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
     });
+
+  const paidUserIds = new Set(
+    trips.filter((t) => t.paid_at).map((t) => t.user_id),
+  );
+  const allPaid = paidUserIds.size === riderCount;
+  const myTripPaid = !!myTrip?.paid_at;
 
   return (
     <main className="min-h-dvh">
@@ -331,6 +339,15 @@ export default async function GroupPage({
                             {t.pickup_area}
                           </p>
                         </div>
+                        {paidUserIds.has(t.user_id) ? (
+                          <span className="shrink-0 text-xs font-medium text-green-600 dark:text-green-400">
+                            ✓ Paid
+                          </span>
+                        ) : (
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            Unpaid
+                          </span>
+                        )}
                         {!isMe && (
                           <Link
                             href={`/report/${t.user_id}?from=${encodeURIComponent(
@@ -451,6 +468,39 @@ export default async function GroupPage({
 
         <section className="space-y-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Payment
+          </h2>
+          <Card className="py-0">
+            <CardContent className="px-4 py-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold">
+                    {paidUserIds.size}/{riderCount} paid
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {allPaid
+                      ? "Everyone has paid — ready to book!"
+                      : "Waiting for all riders to pay before booking."}
+                  </p>
+                </div>
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${allPaid ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
+                  {paidUserIds.size}/{riderCount}
+                </div>
+              </div>
+              {!myTripPaid && !rideCompleted && (
+                <PayButton groupId={groupId} amountCents={perPersonCents} />
+              )}
+              {myTripPaid && (
+                <div className="rounded-lg bg-green-50 dark:bg-green-950/30 px-4 py-3 text-sm font-medium text-green-700 dark:text-green-400 text-center">
+                  ✓ You&apos;ve paid your share
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Book ride
           </h2>
           <Card className="py-0">
@@ -486,9 +536,14 @@ export default async function GroupPage({
                 );
               })()}
 
-              <Button type="button" variant="outline" className="w-full gap-2" disabled>
+              <Button
+                type="button"
+                variant={allPaid ? "default" : "outline"}
+                className="w-full gap-2"
+                disabled={!allPaid}
+              >
                 <Car className="h-4 w-4" />
-                Book ride · Coming soon
+                {allPaid ? "Book ride" : "Book ride · waiting for payment"}
               </Button>
 
               <p className="text-[11px] leading-relaxed text-muted-foreground">
