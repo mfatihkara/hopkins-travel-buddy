@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Chat from "./Chat";
 import RatingStars from "./RatingStars";
 import { leaveGroup, setGroupFare } from "./actions";
+import { getUberEstimates } from "@/lib/uber-price";
 
 const TZ = "America/New_York";
 
@@ -153,16 +154,39 @@ export default async function GroupPage({
     ]),
   );
 
-  // Fare-split estimate. Defaults are rough starting points the group edits to
-  // a real rideshare quote.
+  // Fare-split estimate. Try to get a live Uber price first; fall back to
+  // airport defaults if the API isn't configured or the call fails.
   const DEFAULT_FARE_CENTS: Record<string, number> = {
     BWI: 4500,
     DCA: 8000,
     IAD: 9500,
   };
-  const totalFareCents =
-    group.fare_estimate_cents ?? DEFAULT_FARE_CENTS[group.airport] ?? 6000;
+
+  const organizerTrip = trips.find(
+    (t) => t.user_id === (group as { organizer_id?: string }).organizer_id,
+  );
+  const pickupForEstimate =
+    organizerTrip?.pickup_area ?? myTrip?.pickup_area ?? "";
+
+  const uberEstimates = pickupForEstimate
+    ? await getUberEstimates(pickupForEstimate, group.airport, members.length)
+    : null;
+
+  // Prefer UberX; fall back to the first product in the list.
+  const uberX =
+    uberEstimates?.find((p) =>
+      p.display_name.toLowerCase().includes("uberx"),
+    ) ?? uberEstimates?.[0] ?? null;
+
   const isCustomFare = group.fare_estimate_cents != null;
+  const isUberEstimate = !isCustomFare && !!uberX;
+
+  const totalFareCents =
+    group.fare_estimate_cents ??
+    (uberX
+      ? Math.round((uberX.low_cents + uberX.high_cents) / 2)
+      : DEFAULT_FARE_CENTS[group.airport] ?? 6000);
+
   const riderCount = Math.max(members.length, 1);
   const perPersonCents = Math.ceil(totalFareCents / riderCount);
   const usd = (cents: number) =>
@@ -364,11 +388,17 @@ export default async function GroupPage({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    Estimated per person
+                    {isCustomFare ? "Confirmed per person" : "Estimated per person"}
                   </p>
                   <p className="text-2xl font-bold leading-tight">
                     {usd(perPersonCents)}
                   </p>
+                  {isUberEstimate && uberX && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {uberX.display_name}: {usd(uberX.low_cents)}–{usd(uberX.high_cents)}
+                      {uberX.duration_min > 0 && ` · ~${uberX.duration_min} min`}
+                    </p>
+                  )}
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Wallet className="h-5 w-5" />
@@ -379,7 +409,9 @@ export default async function GroupPage({
                 <Users className="h-3.5 w-3.5 shrink-0" />
                 {usd(totalFareCents)} split {riderCount}{" "}
                 {riderCount === 1 ? "way" : "ways"}
-                {!isCustomFare && " · estimate"}
+                {isCustomFare && " · confirmed"}
+                {isUberEstimate && " · via Uber"}
+                {!isCustomFare && !isUberEstimate && " · estimate"}
               </p>
 
               <form
@@ -415,9 +447,27 @@ export default async function GroupPage({
                 </Button>
               </form>
 
+              {uberEstimates && uberEstimates.length > 1 && (
+                <div className="border-t pt-3 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">All Uber options</p>
+                  {uberEstimates.map((p) => (
+                    <div key={p.display_name} className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{p.display_name}</span>
+                      <span className="font-medium">
+                        {usd(p.low_cents)}–{usd(p.high_cents)}
+                        {p.duration_min > 0 && (
+                          <span className="text-muted-foreground font-normal"> · {p.duration_min} min</span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <p className="text-[11px] leading-relaxed text-muted-foreground">
-                Just an estimate to split costs — confirm the actual price in
-                your rideshare app. In-app payment is coming soon.
+                {isUberEstimate
+                  ? "Prices fetched live from Uber. Confirm the final quote in the Uber app before booking."
+                  : "Just an estimate to split costs — confirm the actual price in your rideshare app. In-app payment is coming soon."}
               </p>
             </CardContent>
           </Card>
