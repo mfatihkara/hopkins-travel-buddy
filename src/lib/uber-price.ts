@@ -1,5 +1,3 @@
-import { unstable_cache } from "next/cache";
-
 // Airport terminal coordinates.
 const AIRPORT_COORDS: Record<string, { lat: number; lng: number }> = {
   BWI: { lat: 39.1754, lng: -76.6684 },
@@ -17,35 +15,55 @@ export type UberProduct = {
   duration_min: number;
 };
 
-// Exchange client credentials for an OAuth Bearer token.
-// Cached for 23 hours; the token TTL is 30 days so this is very conservative.
-const getAccessToken = unstable_cache(
-  async (): Promise<string | null> => {
-    const clientId = process.env.UBER_CLIENT_ID;
-    const clientSecret = process.env.UBER_CLIENT_SECRET;
-    if (!clientId || !clientSecret) return null;
+// In-memory token cache — survives across requests in the same function
+// instance, gets cleared on cold start (which picks up new env vars).
+let _tokenCache: { value: string; expiresAt: number } | null = null;
 
-    try {
-      const res = await fetch("https://auth.uber.com/oauth/v2/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "client_credentials",
-          client_id: clientId,
-          client_secret: clientSecret,
-        }),
-        cache: "no-store",
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return (data.access_token as string) ?? null;
-    } catch {
+async function getAccessToken(): Promise<string | null> {
+  const clientId = process.env.UBER_CLIENT_ID;
+  const clientSecret = process.env.UBER_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    console.error("[uber-price] UBER_CLIENT_ID or UBER_CLIENT_SECRET not set");
+    return null;
+  }
+
+  if (_tokenCache && Date.now() < _tokenCache.expiresAt) {
+    return _tokenCache.value;
+  }
+
+  try {
+    const res = await fetch("https://auth.uber.com/oauth/v2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+      cache: "no-store",
+    });
+
+    const text = await res.text();
+    if (!res.ok) {
+      console.error("[uber-price] Token exchange failed:", res.status, text);
       return null;
     }
-  },
-  ["uber-access-token"],
-  { revalidate: 82800 }, // 23 h
-);
+
+    const data = JSON.parse(text);
+    const token = data.access_token as string | undefined;
+    if (!token) {
+      console.error("[uber-price] No access_token in response:", text);
+      return null;
+    }
+
+    // Cache for 23 hours (token TTL is 30 days).
+    _tokenCache = { value: token, expiresAt: Date.now() + 23 * 3600 * 1000 };
+    return token;
+  } catch (err) {
+    console.error("[uber-price] Token exchange error:", err);
+    return null;
+  }
+}
 
 async function geocode(
   address: string,
@@ -98,10 +116,16 @@ export async function getUberEstimates(
   try {
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${token}` },
-      next: { revalidate: 900 }, // prices are live — cache 15 min
+      next: { revalidate: 900 },
     });
-    if (!res.ok) return null;
-    const body = await res.json();
+
+    const text = await res.text();
+    if (!res.ok) {
+      console.error("[uber-price] Price estimates failed:", res.status, text);
+      return null;
+    }
+
+    const body = JSON.parse(text);
     const prices = (body.prices ?? []) as Array<{
       display_name: string;
       low_estimate: number | null;
@@ -118,7 +142,8 @@ export async function getUberEstimates(
         ),
         duration_min: Math.round((p.duration ?? 0) / 60),
       }));
-  } catch {
+  } catch (err) {
+    console.error("[uber-price] Price estimates error:", err);
     return null;
   }
 }
