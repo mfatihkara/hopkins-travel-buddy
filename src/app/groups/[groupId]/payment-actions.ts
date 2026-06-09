@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
-import { stripe } from "@/lib/stripe";
+import { getServerStripe } from "@/lib/stripe-server";
 
 // Create a Stripe PaymentIntent for the caller's share of the group fare.
 export async function createPaymentIntent(
@@ -28,6 +28,7 @@ export async function createPaymentIntent(
   if (!trip) return { error: "You're not in this group." };
   if (trip.paid_at) return { error: "Already paid." };
 
+  const stripe = getServerStripe();
   const intent = await stripe.paymentIntents.create({
     amount: amountCents,
     currency: "usd",

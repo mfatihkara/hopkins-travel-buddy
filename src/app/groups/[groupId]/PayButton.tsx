@@ -7,7 +7,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { getStripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe-client";
 import { Button } from "@/components/ui/button";
 import { createPaymentIntent, markTripPaid } from "./payment-actions";
 
