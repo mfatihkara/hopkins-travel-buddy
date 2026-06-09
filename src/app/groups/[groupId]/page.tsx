@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft, CalendarPlus, Plane, MapPin, Clock, LogOut, Flag, Star, Wallet, Users } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Plane, MapPin, Clock, LogOut, Flag, Star, Wallet, Users, Car, Crown } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -74,7 +75,7 @@ export default async function GroupPage({
     await Promise.all([
       supabase
         .from("trip_groups")
-        .select("id, airport, created_at, fare_estimate_cents")
+        .select("id, airport, created_at, fare_estimate_cents, organizer_id, max_riders")
         .eq("id", groupId)
         .maybeSingle(),
       supabase
@@ -191,8 +192,7 @@ export default async function GroupPage({
                 Trip to {group.airport}
               </h1>
               <p className="text-xs text-muted-foreground">
-                {members.length}{" "}
-                {members.length === 1 ? "person" : "people"} matched
+                {members.length}/{(group as { max_riders?: number }).max_riders ?? 4} riders
               </p>
             </div>
           </div>
@@ -287,6 +287,12 @@ export default async function GroupPage({
                             {isMe && (
                               <span className="ml-1 text-muted-foreground font-normal">
                                 (you)
+                              </span>
+                            )}
+                            {t.user_id === (group as { organizer_id?: string }).organizer_id && (
+                              <span className="ml-1.5 inline-flex items-center gap-0.5 align-middle text-xs font-normal text-amber-600">
+                                <Crown className="h-3 w-3 fill-amber-400 text-amber-500" />
+                                Organizer
                               </span>
                             )}
                             {summary && (
@@ -412,6 +418,55 @@ export default async function GroupPage({
               <p className="text-[11px] leading-relaxed text-muted-foreground">
                 Just an estimate to split costs — confirm the actual price in
                 your rideshare app. In-app payment is coming soon.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Book ride
+          </h2>
+          <Card className="py-0">
+            <CardContent className="px-4 py-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold leading-tight">Ready to roll?</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Once everyone pays, the organizer books the ride for the group.
+                  </p>
+                </div>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Car className="h-5 w-5" />
+                </div>
+              </div>
+
+              {(() => {
+                const organizer = members.find(
+                  (m) => m.user_id === (group as { organizer_id?: string }).organizer_id,
+                );
+                const organizerName =
+                  organizer?.full_name ??
+                  organizer?.email.split("@")[0] ??
+                  "the organizer";
+                return (
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Crown className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />
+                    <span>
+                      <span className="font-medium text-foreground">{organizerName}</span>{" "}
+                      will call the Uber on behalf of the group.
+                    </span>
+                  </p>
+                );
+              })()}
+
+              <Button type="button" variant="outline" className="w-full gap-2" disabled>
+                <Car className="h-4 w-4" />
+                Book ride · Coming soon
+              </Button>
+
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                In-app payment and automated ride booking are on the way. For now, coordinate in chat and use Uber or Lyft to split the fare.
               </p>
             </CardContent>
           </Card>

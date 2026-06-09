@@ -66,6 +66,7 @@ type TripRow = {
   status: string;
   group_id: string | null;
   user_id: string;
+  max_riders: number;
   profiles: { email: string; full_name: string | null; avatar_url: string | null } | null;
 };
 
@@ -359,7 +360,7 @@ export default async function Home({
   let query = supabase
     .from("trips")
     .select(
-      "id, airport, depart_window_start, depart_window_end, pickup_area, status, group_id, user_id, profiles ( email, full_name, avatar_url )",
+      "id, airport, depart_window_start, depart_window_end, pickup_area, status, group_id, user_id, max_riders, profiles ( email, full_name, avatar_url )",
     )
     .eq("school", userSchool)
     .neq("status", "closed")
@@ -410,6 +411,27 @@ export default async function Home({
         avg: Number(s.avg_score),
         count: s.rating_count as number,
       });
+    }
+  }
+
+  // Rider counts for matched groups shown in the feed, so we can surface
+  // "Full" and disable the Join button when a group has hit its max_riders.
+  const matchedGroupIds = [
+    ...new Set(
+      otherTrips
+        .filter((t) => t.group_id && !myGroupIds.has(t.group_id))
+        .map((t) => t.group_id as string),
+    ),
+  ];
+  const groupRiderCount = new Map<string, number>();
+  if (matchedGroupIds.length > 0) {
+    const { data: gc } = await supabase
+      .from("trips")
+      .select("group_id")
+      .in("group_id", matchedGroupIds);
+    for (const row of gc ?? []) {
+      const g = row.group_id as string;
+      groupRiderCount.set(g, (groupRiderCount.get(g) ?? 0) + 1);
     }
   }
 
@@ -555,6 +577,10 @@ export default async function Home({
             <div className="space-y-3">
               {otherTrips.map((t) => {
                 const sharedGroup = !!t.group_id && myGroupIds.has(t.group_id);
+                const isFull =
+                  !!t.group_id &&
+                  !sharedGroup &&
+                  (groupRiderCount.get(t.group_id) ?? 0) >= t.max_riders;
                 return (
                   <TripCard
                     key={t.id}
@@ -564,6 +590,13 @@ export default async function Home({
                       sharedGroup ? (
                         <Badge className="bg-primary/15 text-primary ring-primary/20 ring-1">
                           In your group
+                        </Badge>
+                      ) : isFull ? (
+                        <Badge
+                          variant="secondary"
+                          className="bg-muted text-muted-foreground ring-1 ring-border"
+                        >
+                          Full
                         </Badge>
                       ) : t.status === "matched" ? (
                         <Badge
@@ -583,6 +616,10 @@ export default async function Home({
                           >
                             View <ArrowRight className="h-3.5 w-3.5" />
                           </Link>
+                        ) : isFull ? (
+                          <Button type="button" size="sm" disabled>
+                            Full
+                          </Button>
                         ) : (
                           <form action={joinTrip}>
                             <input type="hidden" name="trip_id" value={t.id} />

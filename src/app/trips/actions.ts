@@ -52,6 +52,7 @@ export async function joinTrip(formData: FormData) {
     if (msg.includes("Cannot join your own")) home("You can't join your own trip.");
     if (msg.includes("Trip is closed")) home("That trip is closed.");
     if (msg.includes("Trip not found")) home("That trip no longer exists.");
+    if (msg.includes("Group is full")) home("Sorry, that group is already full.");
     home(msg);
   }
 
@@ -86,6 +87,7 @@ export async function joinTripCreatingMine(formData: FormData) {
     if (msg.includes("Trip is closed")) home("That trip is closed.");
     if (msg.includes("Trip not found")) home("That trip no longer exists.");
     if (msg.includes("Different school")) home("That trip is from a different school.");
+    if (msg.includes("Group is full")) home("Sorry, that group is already full.");
     joinPage(otherTripId, msg);
   }
 
