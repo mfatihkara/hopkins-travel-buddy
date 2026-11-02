@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import { ArrowLeft, CalendarPlus, Plane, MapPin, Clock, LogOut, Flag, Star, Wallet, Users, Car, Crown } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,7 +11,6 @@ import Chat from "./Chat";
 import RatingStars from "./RatingStars";
 import { leaveGroup, setGroupFare } from "./actions";
 import { getUberDeepLink } from "@/lib/uber-price";
-import PayButton from "./PayButton";
 
 const TZ = "America/New_York";
 
@@ -45,7 +43,6 @@ type Trip = {
   pickup_area: string;
   depart_window_start: string;
   depart_window_end: string;
-  paid_at: string | null;
   profiles: { email: string; full_name: string | null; avatar_url: string | null } | null;
 };
 
@@ -84,7 +81,7 @@ export default async function GroupPage({
       supabase
         .from("trips")
         .select(
-          "id, user_id, pickup_area, depart_window_start, depart_window_end, paid_at, profiles ( email, full_name, avatar_url )",
+          "id, user_id, pickup_area, depart_window_start, depart_window_end, profiles ( email, full_name, avatar_url )",
         )
         .eq("group_id", groupId)
         .order("depart_window_start", { ascending: true }),
@@ -188,11 +185,11 @@ export default async function GroupPage({
       minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
     });
 
-  const paidUserIds = new Set(
-    trips.filter((t) => t.paid_at).map((t) => t.user_id),
-  );
-  const allPaid = paidUserIds.size === riderCount;
-  const myTripPaid = !!myTrip?.paid_at;
+  const organizerId = (group as { organizer_id?: string }).organizer_id;
+  const organizer = members.find((m) => m.user_id === organizerId);
+  const organizerName =
+    organizer?.full_name ?? organizer?.email.split("@")[0] ?? "The organizer";
+  const iAmOrganizer = organizerId === user.id;
 
   return (
     <main className="min-h-dvh">
@@ -339,15 +336,6 @@ export default async function GroupPage({
                             {t.pickup_area}
                           </p>
                         </div>
-                        {paidUserIds.has(t.user_id) ? (
-                          <span className="shrink-0 text-xs font-medium text-green-600 dark:text-green-400">
-                            ✓ Paid
-                          </span>
-                        ) : (
-                          <span className="shrink-0 text-xs text-muted-foreground">
-                            Unpaid
-                          </span>
-                        )}
                         {!isMe && (
                           <Link
                             href={`/report/${t.user_id}?from=${encodeURIComponent(
@@ -467,87 +455,57 @@ export default async function GroupPage({
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold">
-            Payment
-          </h2>
-          <Card className="py-0">
+          <h2 className="text-sm font-semibold">Book &amp; split</h2>
+          <Card className="py-0 shadow-sm">
             <CardContent className="px-4 py-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold">
-                    {paidUserIds.size}/{riderCount} paid
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {allPaid
-                      ? "Everyone has paid — ready to book!"
-                      : "Waiting for all riders to pay before booking."}
-                  </p>
-                </div>
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${allPaid ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
-                  {paidUserIds.size}/{riderCount}
-                </div>
-              </div>
-              {!myTripPaid && !rideCompleted && (
-                <PayButton groupId={groupId} amountCents={perPersonCents} />
-              )}
-              {myTripPaid && (
-                <div className="rounded-lg bg-green-50 dark:bg-green-950/30 px-4 py-3 text-sm font-medium text-green-700 dark:text-green-400 text-center">
-                  ✓ You&apos;ve paid your share
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </section>
+              <p className="flex items-center gap-1.5 text-sm">
+                <Crown className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500" />
+                <span>
+                  {iAmOrganizer ? (
+                    <span className="font-semibold">You&apos;re booking this ride.</span>
+                  ) : (
+                    <>
+                      <span className="font-semibold">{organizerName}</span> books the Uber.
+                    </>
+                  )}
+                </span>
+              </p>
 
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold">
-            Book ride
-          </h2>
-          <Card className="py-0">
-            <CardContent className="px-4 py-5 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold leading-tight">Ready to roll?</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Once everyone pays, the organizer books the ride for the group.
-                  </p>
-                </div>
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Car className="h-5 w-5" />
-                </div>
-              </div>
-
-              {(() => {
-                const organizer = members.find(
-                  (m) => m.user_id === (group as { organizer_id?: string }).organizer_id,
-                );
-                const organizerName =
-                  organizer?.full_name ??
-                  organizer?.email.split("@")[0] ??
-                  "the organizer";
-                return (
-                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Crown className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />
-                    <span>
-                      <span className="font-medium text-foreground">{organizerName}</span>{" "}
-                      will call the Uber on behalf of the group.
+              <ol className="space-y-2.5 text-sm">
+                {[
+                  iAmOrganizer
+                    ? "Request the ride in Uber at your pickup time."
+                    : `${organizerName} requests the ride in Uber.`,
+                  "Once a driver is assigned, open the trip details → Split fare → add each rider.",
+                  "Everyone accepts the split in their Uber app — Uber charges each card.",
+                ].map((step, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      {i + 1}
                     </span>
-                  </p>
-                );
-              })()}
+                    <span className="pt-0.5 text-muted-foreground">{step}</span>
+                  </li>
+                ))}
+              </ol>
 
-              <Button
-                type="button"
-                variant={allPaid ? "default" : "outline"}
-                className="w-full gap-2"
-                disabled={!allPaid}
-              >
-                <Car className="h-4 w-4" />
-                {allPaid ? "Book ride" : "Book ride · waiting for payment"}
-              </Button>
+              {uberDeepLink && (
+                <a
+                  href={uberDeepLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonVariants({
+                    variant: iAmOrganizer ? "default" : "outline",
+                    size: "lg",
+                    className: "w-full gap-2",
+                  })}
+                >
+                  <Car className="h-4 w-4" />
+                  Open Uber
+                </a>
+              )}
 
               <p className="text-[11px] leading-relaxed text-muted-foreground">
-                In-app payment and automated ride booking are on the way. For now, coordinate in chat and use Uber or Lyft to split the fare.
+                Riders need an Uber account to accept a split. Swap phone numbers in the chat below so the organizer can add you.
               </p>
             </CardContent>
           </Card>
