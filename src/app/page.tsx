@@ -94,9 +94,9 @@ function TripCard({
   rating?: { avg: number; count: number };
 }) {
   return (
-    <Card className="py-0">
+    <Card className="py-0 shadow-sm">
       <CardContent className="px-4 py-4">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
           {trip.profiles ? (
             <Link href={`/profile/${trip.user_id}`} className="shrink-0">
               <Avatar size="lg">
@@ -106,7 +106,7 @@ function TripCard({
                     alt={displayName(trip.profiles)}
                   />
                 )}
-                <AvatarFallback className="bg-primary/10 text-primary">
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                   {initials(displayName(trip.profiles))}
                 </AvatarFallback>
               </Avatar>
@@ -119,35 +119,40 @@ function TripCard({
             </Avatar>
           )}
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="font-semibold leading-tight">
-                {trip.airport} · {formatDate(trip.depart_window_start)}
-              </p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-black tracking-tight leading-none">
+                {trip.airport}
+              </span>
+              <span className="text-sm font-medium text-muted-foreground">
+                {formatDate(trip.depart_window_start)}
+              </span>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <p className="text-sm text-muted-foreground mt-1">
               {formatTimeRange(trip.depart_window_start, trip.depart_window_end)}
             </p>
-            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{trip.pickup_area}</span>
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-0.5">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate max-w-[110px]">{trip.pickup_area}</span>
+              </span>
               {trip.profiles && (
                 <Link
                   href={`/profile/${trip.user_id}`}
-                  className="text-muted-foreground/70 hover:text-primary hover:underline"
+                  className="hover:text-primary hover:underline"
                 >
                   · @{displayName(trip.profiles)}
                 </Link>
               )}
               {rating && (
-                <span className="inline-flex items-center gap-0.5 text-muted-foreground/90">
-                  · <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                <span className="inline-flex items-center gap-0.5">
+                  · <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                   {rating.avg.toFixed(1)}
                 </span>
               )}
-            </p>
-            {badge && <div className="mt-2">{badge}</div>}
+            </div>
+            {badge && <div className="mt-2 flex flex-wrap gap-1">{badge}</div>}
           </div>
-          {rightSlot && <div className="shrink-0">{rightSlot}</div>}
+          {rightSlot && <div className="shrink-0 ml-1">{rightSlot}</div>}
         </div>
       </CardContent>
     </Card>
@@ -157,17 +162,20 @@ function TripCard({
 function EmptyState({
   icon: Icon,
   children,
+  action,
 }: {
   icon: typeof Plane;
   children: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
-    <Card className="py-0">
+    <Card className="py-0 border-dashed">
       <CardContent className="flex flex-col items-center gap-3 px-4 py-10 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
           <Icon className="h-6 w-6" />
         </div>
         <div className="text-sm text-muted-foreground">{children}</div>
+        {action}
       </CardContent>
     </Card>
   );
@@ -221,36 +229,50 @@ const PERKS = [
 function Landing() {
   return (
     <main className="min-h-dvh pb-12">
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary to-[#27508c] px-6 pb-12 pt-16 text-primary-foreground">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#001233] via-primary to-[#1d4a85] px-6 pb-16 pt-20 text-primary-foreground">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#68ACE5]/20 blur-2xl"
+          className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[#68ACE5]/15 blur-3xl"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-white/10 blur-2xl"
+          className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-white/5 blur-3xl"
         />
-        <div className="relative mx-auto max-w-md space-y-5 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-            <Plane className="h-8 w-8" />
+        <div className="relative mx-auto max-w-md space-y-6 text-center animate-in fade-in slide-in-from-bottom-3 duration-500">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/15 ring-1 ring-white/20 backdrop-blur shadow-[0_0_30px_rgba(255,255,255,0.08)]">
+            <Plane className="h-10 w-10" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">Travel Buddy</h1>
-          <p className="mx-auto max-w-xs text-lg text-primary-foreground/85">
-            Share a ride to the airport with a verified classmate. Split the
-            cost, skip the solo Uber.
-          </p>
+          <div className="space-y-3">
+            <h1 className="text-5xl font-black tracking-tight leading-[1.05]">
+              Travel<br />Together.
+            </h1>
+            <p className="mx-auto max-w-xs text-base text-primary-foreground/80 leading-relaxed">
+              Skip the $60 solo Uber. Match with a verified classmate and split the fare.
+            </p>
+          </div>
           <Link
             href="/login"
             className={cn(
               buttonVariants({ size: "xl" }),
-              "w-full bg-white text-primary shadow-sm hover:bg-white/90",
+              "w-full bg-white text-primary font-semibold shadow-[0_4px_20px_rgba(0,0,0,0.25)] hover:bg-white/95",
             )}
           >
-            Sign in with your .edu email
+            Get started with .edu
           </Link>
-          <p className="text-xs text-primary-foreground/70">
-            Students only · Free to use
-          </p>
+          <div className="flex items-center justify-center gap-6 text-xs text-primary-foreground/60">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary-foreground/70" />
+              .edu only
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Star className="h-3.5 w-3.5 text-primary-foreground/70" />
+              Rated riders
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Wallet className="h-3.5 w-3.5 text-primary-foreground/70" />
+              Free
+            </span>
+          </div>
         </div>
       </section>
 
@@ -284,18 +306,18 @@ function Landing() {
       <section className="mx-auto max-w-md px-6">
         <div className="grid grid-cols-2 gap-3">
           {PERKS.map((p) => (
-            <Card key={p.title} className="py-0">
-              <CardContent className="space-y-2 px-4 py-4">
+            <Card key={p.title} className="py-0 shadow-sm">
+              <CardContent className="space-y-2.5 px-4 py-5">
                 <span
                   className={
-                    "flex h-9 w-9 items-center justify-center rounded-lg " +
+                    "flex h-10 w-10 items-center justify-center rounded-xl " +
                     p.tone
                   }
                 >
-                  <p.icon className="h-4 w-4" />
+                  <p.icon className="h-5 w-5" />
                 </span>
                 <p className="text-sm font-semibold leading-tight">{p.title}</p>
-                <p className="text-xs text-muted-foreground">{p.desc}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{p.desc}</p>
               </CardContent>
             </Card>
           ))}
@@ -460,18 +482,18 @@ export default async function Home({
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <Plane className="h-4 w-4" />
             </div>
-            <span className="font-semibold">Travel Buddy</span>
+            <span className="font-bold tracking-tight">Travel Buddy</span>
           </div>
           <ThemeSwitch />
         </div>
       </header>
 
       <div className="mx-auto max-w-md px-4 py-6 space-y-8">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Your rides</h1>
+        <div className="space-y-0.5">
+          <h1 className="text-2xl font-black tracking-tight">Your rides</h1>
           <p className="text-sm text-muted-foreground">
             Find a classmate headed to the airport.
           </p>
@@ -480,19 +502,27 @@ export default async function Home({
         <FlashToast message={params.message} error={params.error} />
 
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Your trips
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Your trips</h2>
+            <Link
+              href="/trips/new"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1.5 text-primary h-7 px-2 text-xs font-semibold")}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New trip
+            </Link>
+          </div>
           {myTrips.length === 0 ? (
-            <EmptyState icon={Plane}>
-              You haven&apos;t posted any trips yet.
-              <br />
-              Tap{" "}
-              <span className="inline-flex items-center gap-1 font-medium text-primary">
-                <Plus className="h-3.5 w-3.5" />
-                Post a trip
-              </span>{" "}
-              to find a buddy.
+            <EmptyState
+              icon={Plane}
+              action={
+                <Link href="/trips/new" className={buttonVariants({ size: "sm" })}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Post a trip
+                </Link>
+              }
+            >
+              No trips yet — post one to find a buddy.
             </EmptyState>
           ) : (
             <div className="space-y-3">
@@ -558,9 +588,7 @@ export default async function Home({
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Other students
-          </h2>
+          <h2 className="text-sm font-semibold">Students going your way</h2>
           <FeedFilters
             airport={activeAirport}
             date={activeDate}
@@ -652,9 +680,7 @@ export default async function Home({
 
         {pastRides.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Past rides
-            </h2>
+            <h2 className="text-sm font-semibold">Past rides</h2>
             <div className="space-y-3">
               {pastRides.map((t) => (
                 <Card key={t.id} className="py-0">

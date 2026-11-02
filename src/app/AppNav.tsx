@@ -77,10 +77,10 @@ export default function AppNav({
       {/* Desktop: persistent left sidebar */}
       <aside className="hidden border-r bg-background px-3 py-4 md:fixed md:inset-y-0 md:left-0 md:flex md:w-60 md:flex-col">
         <div className="flex items-center gap-2 px-2 pb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <Plane className="h-4 w-4" />
           </div>
-          <span className="font-semibold">Travel Buddy</span>
+          <span className="font-black tracking-tight">Travel Buddy</span>
         </div>
 
         <nav className="flex flex-1 flex-col gap-1">
@@ -132,7 +132,7 @@ export default function AppNav({
       </aside>
 
       {/* Mobile: bottom tab bar (Home · Notifications · + · Profile) */}
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex items-stretch justify-around border-t bg-background/95 px-2 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-1.5 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-20 flex items-stretch justify-around border-t bg-background/95 px-2 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-1 backdrop-blur md:hidden">
         <TabLink item={ITEMS[0]} pathname={pathname} unread={unread} />
         <TabLink
           item={ITEMS[1]}
@@ -142,11 +142,11 @@ export default function AppNav({
         />
         <Link
           href="/trips/new"
-          aria-label="Post a trip"
-          className="flex flex-1 flex-col items-center justify-center px-2"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <Plus className="h-5 w-5" />
+          <span className="flex h-9 w-20 items-center justify-center gap-1 rounded-full bg-primary text-primary-foreground shadow-sm">
+            <Plus className="h-4 w-4" />
+            <span className="text-[11px] font-bold">Post</span>
           </span>
         </Link>
         <TabLink item={ITEMS[2]} pathname={pathname} unread={unread} />
@@ -174,11 +174,14 @@ function TabLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        "flex flex-1 flex-col items-center justify-center gap-0.5 px-2 py-1 text-[10px] font-medium",
+        "flex flex-1 flex-col items-center justify-center gap-0.5 px-2 py-1 text-[10px] font-medium transition-colors",
         active ? "text-primary" : "text-muted-foreground",
       )}
     >
-      <span className="relative">
+      <span className={cn(
+        "relative flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+        active && "bg-primary/10",
+      )}>
         <Icon className="h-5 w-5" />
         {showBadge && <Badge count={unread} />}
       </span>

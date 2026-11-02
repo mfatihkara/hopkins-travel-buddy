@@ -206,12 +206,12 @@ export default async function GroupPage({
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex flex-1 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <Plane className="h-4 w-4" />
             </div>
             <div>
-              <h1 className="text-base font-semibold leading-tight">
-                Trip to {group.airport}
+              <h1 className="text-base font-bold leading-tight">
+                <span className="font-black">{group.airport}</span> · Group
               </h1>
               <p className="text-xs text-muted-foreground">
                 {members.length}/{(group as { max_riders?: number }).max_riders ?? 4} riders
@@ -256,7 +256,7 @@ export default async function GroupPage({
         </div>
 
         <section className="space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-sm font-semibold">
             Members
           </h2>
           <Card className="py-0">
@@ -387,7 +387,7 @@ export default async function GroupPage({
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-sm font-semibold">
             Cost split
           </h2>
           <Card className="py-0">
@@ -467,7 +467,7 @@ export default async function GroupPage({
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-sm font-semibold">
             Payment
           </h2>
           <Card className="py-0">
@@ -500,7 +500,7 @@ export default async function GroupPage({
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-sm font-semibold">
             Book ride
           </h2>
           <Card className="py-0">
@@ -554,7 +554,7 @@ export default async function GroupPage({
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-sm font-semibold">
             Chat
           </h2>
           <Chat
